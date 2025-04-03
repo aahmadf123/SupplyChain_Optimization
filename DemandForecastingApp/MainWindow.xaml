@@ -7,44 +7,115 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:ui="clr-namespace:DemandForecastingApp.UI"
         mc:Ignorable="d"
-        Title="Demand Forecasting & Inventory Optimization" Height="700" Width="1000">
+        Title="Demand Forecasting & Inventory Optimization"
+        Height="700"
+        Width="1000"
+        Background="#F2F2F2">
+
+    <!-- Define some basic styles and brushes in Window.Resources for reuse -->
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentColor" Color="#007ACC"/>
+        <SolidColorBrush x:Key="PanelBackground" Color="#FFFFFF"/>
+        <!-- Button Style with Icon support -->
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Width" Value="100"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="TabControl">
+            <Setter Property="Margin" Value="10"/>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+        <Style TargetType="StatusBar">
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Background" Value="#E8E8E8"/>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
-            <!-- Row for input controls -->
+            <!-- Row 0: Configuration Panel -->
             <RowDefinition Height="Auto"/>
-            <!-- Row for status bar -->
-            <RowDefinition Height="Auto"/>
-            <!-- Row for chart display -->
+            <!-- Row 1: Chart Display Area -->
             <RowDefinition Height="2*"/>
-            <!-- Row for additional UI components (TabControl) -->
+            <!-- Row 2: GridSplitter -->
+            <RowDefinition Height="5"/>
+            <!-- Row 3: TabControl (Forecast Details, Inventory, Settings) -->
             <RowDefinition Height="*"/>
+            <!-- Row 4: Status Bar -->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Top Panel for Data Input & Configuration -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="10" HorizontalAlignment="Left">
-            <Button Content="Load Data" Width="100" Margin="5" Click="LoadData_Click"/>
-            
-            <Label Content="Lead Time:" VerticalAlignment="Center" Margin="5"/>
-            <TextBox Name="LeadTimeTextBox" Width="80" Margin="5"/>
-            
-            <Label Content="Reorder Threshold:" VerticalAlignment="Center" Margin="5"/>
-            <TextBox Name="ReorderThresholdTextBox" Width="80" Margin="5"/>
-            
-            <Button Content="Run Forecast" Width="100" Margin="5" Click="RunForecast_Click"/>
-        </StackPanel>
-        
-        <!-- Status Bar -->
-        <Border Grid.Row="1" BorderBrush="#FFABADB3" BorderThickness="0,1,0,1" Background="#FFF0F0F0">
-            <Label Name="StatusLabel" Content="Ready" Margin="5" Padding="5,2"/>
+        <!-- TOP CONFIGURATION AREA -->
+        <GroupBox Grid.Row="0"
+                  Header="Configuration"
+                  Margin="10"
+                  Background="{StaticResource PanelBackground}"
+                  BorderBrush="#C0C0C0"
+                  BorderThickness="1">
+            <DockPanel Margin="10">
+                <!-- Left side: Data Input and Buttons with Icons -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <!-- Load Data Button with Icon -->
+                    <Button Click="LoadData_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Load.png" Width="16" Height="16" Margin="0,0,5,0"/>
+                            <TextBlock Text="Load Data" />
+                        </StackPanel>
+                    </Button>
+                    
+                    <Label Content="Lead Time:"/>
+                    <TextBox Name="LeadTimeTextBox"/>
+                    
+                    <Label Content="Reorder Threshold:"/>
+                    <TextBox Name="ReorderThresholdTextBox"/>
+                    
+                    <!-- Run Forecast Button with Icon -->
+                    <Button Click="RunForecast_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="Assets/Forecast.png" Width="16" Height="16" Margin="0,0,5,0"/>
+                            <TextBlock Text="Run Forecast" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </GroupBox>
+
+        <!-- CHART DISPLAY AREA -->
+        <Border Grid.Row="1"
+                Margin="10"
+                Background="{StaticResource PanelBackground}"
+                BorderBrush="#C0C0C0"
+                BorderThickness="1"
+                CornerRadius="4">
+            <Grid>
+                <lvc:CartesianChart Name="ForecastChart" />
+            </Grid>
         </Border>
 
-        <!-- Chart Display Area -->
-        <Grid Grid.Row="2" Margin="10">
-            <lvc:CartesianChart Name="ForecastChart" />
-        </Grid>
+        <!-- GRID SPLITTER FOR RESPONSIVE DESIGN -->
+        <GridSplitter Grid.Row="2"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Height="5"
+                      Background="#C0C0C0"
+                      ShowsPreview="True"/>
 
-        <!-- Tab Control for Additional UI Components -->
-        <TabControl Name="MainTabControl" Grid.Row="3" Margin="10">
+        <!-- TAB CONTROL FOR EXTRA UI COMPONENTS -->
+        <TabControl Grid.Row="3">
             <TabItem Header="Forecast Details">
                 <ui:ForecastDetailsControl />
             </TabItem>
@@ -55,6 +126,16 @@
                 <ui:SettingsControl />
             </TabItem>
         </TabControl>
+
+        <!-- STATUS BAR AT THE BOTTOM -->
+        <StatusBar Grid.Row="4">
+            <TextBlock Text="Ready" VerticalAlignment="Center"/>
+        </StatusBar>
     </Grid>
+
+    <!-- 
+    Additional Suggestions:
+      - For a modern Material Design look, consider integrating the MaterialDesignInXAML library.
+      - To improve code maintainability, consider using the MVVM pattern with data binding and commands instead of code-behind event handlers.
+    -->
 </Window>
-<!-- End of MainWindow.xaml -->
