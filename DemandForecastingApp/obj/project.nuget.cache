@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "7m2F2kymrIU=",
+  "dgSpecHash": "fmCQCx4H9wg=",
   "success": true,
   "projectFilePath": "C:\\Users\\firas\\SupplyChainOptimization\\DemandForecastingApp\\DemandForecastingApp.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\firas\\.nuget\\packages\\csvhelper\\33.0.1\\csvhelper.33.0.1.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\livecharts\\0.9.7\\livecharts.0.9.7.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\livecharts.wpf\\0.9.7\\livecharts.wpf.0.9.7.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\microsoft.ml\\4.0.2\\microsoft.ml.4.0.2.nupkg.sha512",

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DemandForecastingApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c77286637d9b7874afdac1bfa967aeb81ceab3c7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+15c85c0a59793a6e512d08375c57e7b68cfdf52f")]
 [assembly: System.Reflection.AssemblyProductAttribute("DemandForecastingApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DemandForecastingApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

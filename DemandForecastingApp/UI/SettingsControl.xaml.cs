@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml.Serialization;
 
 namespace DemandForecastingApp.UI
 {
@@ -8,9 +11,12 @@ namespace DemandForecastingApp.UI
     /// </summary>
     public partial class SettingsControl : UserControl
     {
+        private readonly string _settingsFilePath = "settings.xml";
+        
         public SettingsControl()
         {
             InitializeComponent();
+            LoadSettings();
         }
 
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
@@ -24,8 +30,68 @@ namespace DemandForecastingApp.UI
 
             string mlModelParameter = MLModelParameterTextBox.Text;
             
-            // TODO: Save these settings, for example to a configuration file or settings object.
-            MessageBox.Show($"Settings Saved:\nForecast Horizon: {forecastHorizon}\nML Model Parameter: {mlModelParameter}");
+            // Create settings object and save
+            var settings = new AppSettings
+            {
+                ForecastHorizon = forecastHorizon,
+                MLModelParameter = mlModelParameter,
+                LastUpdated = DateTime.Now
+            };
+            
+            try
+            {
+                // Serialize settings to XML
+                var serializer = new XmlSerializer(typeof(AppSettings));
+                using (var writer = new StreamWriter(_settingsFilePath))
+                {
+                    serializer.Serialize(writer, settings);
+                }
+                
+                MessageBox.Show($"Settings Saved:\nForecast Horizon: {forecastHorizon}\nML Model Parameter: {mlModelParameter}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}");
+            }
         }
+        
+        private void LoadSettings()
+        {
+            try
+            {
+                if (File.Exists(_settingsFilePath))
+                {
+                    var serializer = new XmlSerializer(typeof(AppSettings));
+                    using (var reader = new StreamReader(_settingsFilePath))
+                    {
+                        var settings = (AppSettings)serializer.Deserialize(reader);
+                        ForecastHorizonTextBox.Text = settings.ForecastHorizon.ToString();
+                        MLModelParameterTextBox.Text = settings.MLModelParameter;
+                    }
+                }
+                else
+                {
+                    // Set defaults
+                    ForecastHorizonTextBox.Text = "12";
+                    MLModelParameterTextBox.Text = "Default";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading settings: {ex.Message}");
+                // Set defaults if loading fails
+                ForecastHorizonTextBox.Text = "12";
+                MLModelParameterTextBox.Text = "Default";
+            }
+        }
+    }
+    
+    // Settings class for serialization
+    [Serializable]
+    public class AppSettings
+    {
+        public int ForecastHorizon { get; set; }
+        public string MLModelParameter { get; set; }
+        public DateTime LastUpdated { get; set; }
     }
 }

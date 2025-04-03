@@ -12,6 +12,8 @@
         <Grid.RowDefinitions>
             <!-- Row for input controls -->
             <RowDefinition Height="Auto"/>
+            <!-- Row for status bar -->
+            <RowDefinition Height="Auto"/>
             <!-- Row for chart display -->
             <RowDefinition Height="2*"/>
             <!-- Row for additional UI components (TabControl) -->
@@ -30,14 +32,19 @@
             
             <Button Content="Run Forecast" Width="100" Margin="5" Click="RunForecast_Click"/>
         </StackPanel>
+        
+        <!-- Status Bar -->
+        <Border Grid.Row="1" BorderBrush="#FFABADB3" BorderThickness="0,1,0,1" Background="#FFF0F0F0">
+            <Label Name="StatusLabel" Content="Ready" Margin="5" Padding="5,2"/>
+        </Border>
 
         <!-- Chart Display Area -->
-        <Grid Grid.Row="1" Margin="10">
+        <Grid Grid.Row="2" Margin="10">
             <lvc:CartesianChart Name="ForecastChart" />
         </Grid>
 
         <!-- Tab Control for Additional UI Components -->
-        <TabControl Grid.Row="2" Margin="10">
+        <TabControl Name="MainTabControl" Grid.Row="3" Margin="10">
             <TabItem Header="Forecast Details">
                 <ui:ForecastDetailsControl />
             </TabItem>
