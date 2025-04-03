@@ -8,6 +8,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using DemandForecastingApp;
+using DemandForecastingApp.UI;
+using LiveCharts.Wpf;
 using System;
 using System.Diagnostics;
 using System.Windows;
