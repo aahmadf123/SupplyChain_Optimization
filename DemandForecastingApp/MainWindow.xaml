@@ -10,42 +10,27 @@
         Title="Demand Forecasting & Inventory Optimization"
         Height="700"
         Width="1000"
-        Background="#F2F2F2">
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI">
 
-    <!-- Define some basic styles and brushes in Window.Resources for reuse -->
+    <!-- MaterialDesign Resource Dictionaries for a futuristic look -->
     <Window.Resources>
-        <SolidColorBrush x:Key="AccentColor" Color="#007ACC"/>
-        <SolidColorBrush x:Key="PanelBackground" Color="#FFFFFF"/>
-        <!-- Button Style with Icon support -->
-        <Style TargetType="Button">
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Width" Value="100"/>
-        </Style>
-        <Style TargetType="Label">
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-        <Style TargetType="TabControl">
-            <Setter Property="Margin" Value="10"/>
-        </Style>
-        <Style TargetType="TabItem">
-            <Setter Property="Padding" Value="10"/>
-        </Style>
-        <Style TargetType="StatusBar">
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="Background" Value="#E8E8E8"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Use Dark Theme for a modern, futuristic appearance -->
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+                <!-- Recommended Colors for Primary and Accent -->
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Primary/MaterialDesignColor.DeepPurple.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Lime.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Additional futuristic style settings -->
+            <SolidColorBrush x:Key="FuturisticBackground" Color="#1E1E2F" />
+            <SolidColorBrush x:Key="PanelBackground" Color="#2D2D3B" />
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Grid>
+    <Grid Background="{StaticResource FuturisticBackground}">
         <Grid.RowDefinitions>
             <!-- Row 0: Configuration Panel -->
             <RowDefinition Height="Auto"/>
@@ -64,30 +49,29 @@
                   Header="Configuration"
                   Margin="10"
                   Background="{StaticResource PanelBackground}"
-                  BorderBrush="#C0C0C0"
-                  BorderThickness="1">
+                  BorderBrush="Transparent"
+                  FontSize="14">
             <DockPanel Margin="10">
-                <!-- Left side: Data Input and Buttons with Icons -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <!-- Load Data Button with Icon -->
-                    <Button Click="LoadData_Click">
+                    <!-- Load Data Button with Icon (ensure Assets/Load.png exists) -->
+                    <Button Click="LoadData_Click" Style="{StaticResource MaterialDesignRaisedButton}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="Assets/Load.png" Width="16" Height="16" Margin="0,0,5,0"/>
-                            <TextBlock Text="Load Data" />
+                            <Image Source="Assets/Load.png" Width="20" Height="20" Margin="0,0,5,0"/>
+                            <TextBlock Text="Load Data" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     
-                    <Label Content="Lead Time:"/>
-                    <TextBox Name="LeadTimeTextBox"/>
+                    <Label Content="Lead Time:" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBox Name="LeadTimeTextBox" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Width="120"/>
                     
-                    <Label Content="Reorder Threshold:"/>
-                    <TextBox Name="ReorderThresholdTextBox"/>
+                    <Label Content="Reorder Threshold:" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBox Name="ReorderThresholdTextBox" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Width="120"/>
                     
-                    <!-- Run Forecast Button with Icon -->
-                    <Button Click="RunForecast_Click">
+                    <!-- Run Forecast Button with Icon (ensure Assets/Forecast.png exists) -->
+                    <Button Click="RunForecast_Click" Style="{StaticResource MaterialDesignRaisedButton}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="Assets/Forecast.png" Width="16" Height="16" Margin="0,0,5,0"/>
-                            <TextBlock Text="Run Forecast" />
+                            <Image Source="Assets/Forecast.png" Width="20" Height="20" Margin="0,0,5,0"/>
+                            <TextBlock Text="Run Forecast" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -98,11 +82,10 @@
         <Border Grid.Row="1"
                 Margin="10"
                 Background="{StaticResource PanelBackground}"
-                BorderBrush="#C0C0C0"
-                BorderThickness="1"
+                BorderBrush="Transparent"
                 CornerRadius="4">
             <Grid>
-                <lvc:CartesianChart Name="ForecastChart" />
+                <lvc:CartesianChart Name="ForecastChart"/>
             </Grid>
         </Border>
 
@@ -111,31 +94,37 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Height="5"
-                      Background="#C0C0C0"
+                      Background="Gray"
                       ShowsPreview="True"/>
 
         <!-- TAB CONTROL FOR EXTRA UI COMPONENTS -->
-        <TabControl Grid.Row="3">
+        <TabControl Grid.Row="3"
+                    Background="{StaticResource PanelBackground}"
+                    Foreground="White">
             <TabItem Header="Forecast Details">
-                <ui:ForecastDetailsControl />
+                <ui:ForecastDetailsControl/>
             </TabItem>
             <TabItem Header="Inventory Recommendations">
-                <ui:InventoryRecommendationsControl />
+                <ui:InventoryRecommendationsControl/>
             </TabItem>
             <TabItem Header="Settings">
-                <ui:SettingsControl />
+                <ui:SettingsControl/>
             </TabItem>
         </TabControl>
 
         <!-- STATUS BAR AT THE BOTTOM -->
-        <StatusBar Grid.Row="4">
+        <StatusBar Grid.Row="4"
+                   Background="{StaticResource PanelBackground}"
+                   Foreground="White">
             <TextBlock Text="Ready" VerticalAlignment="Center"/>
         </StatusBar>
     </Grid>
 
     <!-- 
-    Additional Suggestions:
-      - For a modern Material Design look, consider integrating the MaterialDesignInXAML library.
-      - To improve code maintainability, consider using the MVVM pattern with data binding and commands instead of code-behind event handlers.
+    Additional Suggestions Integrated:
+      - MaterialDesignInXAML is used to give the app a modern, futuristic feel.
+      - The layout includes a GridSplitter for responsive design and side-by-side views.
+      - Consider adopting the MVVM pattern with data binding and commands for better maintainability.
+      - For further customization, explore MaterialDesign styles and converters to create animations and transitions.
     -->
 </Window>
