@@ -6,7 +6,6 @@
         xmlns:local="clr-namespace:DemandForecastingApp"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:ui="clr-namespace:DemandForecastingApp.UI"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Demand Forecasting and Inventory Optimization"
         Height="700"
@@ -14,21 +13,51 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI">
 
-    <!-- MaterialDesign Resource Dictionaries for a futuristic look -->
     <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <!-- Use Dark Theme for a modern, futuristic appearance -->
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
-                <!-- Recommended Colors for Primary and Accent -->
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Primary/MaterialDesignColor.DeepPurple.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Lime.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-            <!-- Additional futuristic style settings -->
-            <SolidColorBrush x:Key="FuturisticBackground" Color="#1E1E2F" />
-            <SolidColorBrush x:Key="PanelBackground" Color="#2D2D3B" />
-        </ResourceDictionary>
+        <!-- Dark Theme Colors -->
+        <SolidColorBrush x:Key="FuturisticBackground" Color="#1E1E2F" />
+        <SolidColorBrush x:Key="PanelBackground" Color="#2D2D3B" />
+        <SolidColorBrush x:Key="AccentColor" Color="#8BC34A" />
+        <SolidColorBrush x:Key="TextColor" Color="White" />
+        <SolidColorBrush x:Key="BorderColor" Color="#3F3F5F" />
+        
+        <!-- Button Style -->
+        <Style x:Key="FuturisticButton" TargetType="Button">
+            <Setter Property="Background" Value="#673AB7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- TextBox Style -->
+        <Style x:Key="FuturisticTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="#242435"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#3F3F5F"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        
+        <!-- Card Style (Border as replacement) -->
+        <Style x:Key="FuturisticCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource PanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource FuturisticBackground}">
@@ -46,51 +75,51 @@
         </Grid.RowDefinitions>
 
         <!-- TOP CONFIGURATION AREA -->
-        <materialDesign:Card Grid.Row="0"
-                  Margin="10"
-                  Background="{StaticResource PanelBackground}"
-                  UniformCornerRadius="8">
+        <Border Grid.Row="0"
+                Style="{StaticResource FuturisticCard}"
+                Margin="10">
             <DockPanel Margin="15">
                 <TextBlock DockPanel.Dock="Top" Text="Configuration" 
-                           FontSize="16" FontWeight="Medium" Margin="0,0,0,10"/>
+                           FontSize="16" FontWeight="Medium" Margin="0,0,0,10" 
+                           Foreground="{StaticResource TextColor}"/>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <!-- Load Data Button with Icon -->
                     <Button Command="{Binding LoadDataCommand}" 
-                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Style="{StaticResource FuturisticButton}"
                             Margin="0,0,15,0">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="FileUpload" Width="20" Height="20" Margin="0,0,8,0"/>
                             <TextBlock Text="Load Data" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     
-                    <TextBlock Text="Lead Time:" Margin="15,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Lead Time:" Margin="15,0,5,0" VerticalAlignment="Center" 
+                               Foreground="{StaticResource TextColor}"/>
                     <TextBox Text="{Binding LeadTime, UpdateSourceTrigger=PropertyChanged}"
                              Width="80" Margin="0,0,15,0"
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                             Style="{StaticResource FuturisticTextBox}"/>
                     
-                    <TextBlock Text="Reorder Threshold:" Margin="15,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Reorder Threshold:" Margin="15,0,5,0" VerticalAlignment="Center" 
+                               Foreground="{StaticResource TextColor}"/>
                     <TextBox Text="{Binding ReorderThreshold, UpdateSourceTrigger=PropertyChanged}"
                              Width="80" Margin="0,0,15,0"
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                             Style="{StaticResource FuturisticTextBox}"/>
                     
-                    <!-- Run Forecast Button with Icon -->
+                    <!-- Run Forecast Button -->
                     <Button Command="{Binding RunForecastCommand}" 
-                            Style="{StaticResource MaterialDesignRaisedAccentButton}">
+                            Style="{StaticResource FuturisticButton}" 
+                            Background="{StaticResource AccentColor}">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ChartLineVariant" Width="20" Height="20" Margin="0,0,8,0"/>
                             <TextBlock Text="Run Forecast" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </DockPanel>
-        </materialDesign:Card>
+        </Border>
 
         <!-- CHART DISPLAY AREA -->
-        <materialDesign:Card Grid.Row="1"
-                Margin="10"
-                Background="{StaticResource PanelBackground}"
-                UniformCornerRadius="8">
+        <Border Grid.Row="1"
+                Style="{StaticResource FuturisticCard}"
+                Margin="10">
             <Grid Margin="8">
                 <lvc:CartesianChart Series="{Binding ForecastSeries}">
                     <lvc:CartesianChart.AxisX>
@@ -102,7 +131,7 @@
                     </lvc:CartesianChart.AxisY>
                 </lvc:CartesianChart>
             </Grid>
-        </materialDesign:Card>
+        </Border>
 
         <!-- GRID SPLITTER FOR RESPONSIVE DESIGN -->
         <GridSplitter Grid.Row="2"
@@ -113,13 +142,19 @@
                       ShowsPreview="True"/>
 
         <!-- TAB CONTROL FOR EXTRA UI COMPONENTS -->
-        <materialDesign:Card Grid.Row="3"
-                             Margin="10"
-                             Background="{StaticResource PanelBackground}"
-                             UniformCornerRadius="8">
+        <Border Grid.Row="3"
+                Style="{StaticResource FuturisticCard}"
+                Margin="10">
             <TabControl Background="Transparent"
-                        BorderBrush="Transparent"
-                        Style="{StaticResource MaterialDesignNavigatilRailTabControl}">
+                        BorderBrush="Transparent">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Padding" Value="10,5"/>
+                    </Style>
+                </TabControl.Resources>
                 <TabItem Header="Forecast Details">
                     <DataGrid ItemsSource="{Binding ForecastPoints}" 
                               AutoGenerateColumns="False" IsReadOnly="True"
@@ -158,17 +193,19 @@
                     <ui:SettingsControl/>
                 </TabItem>
             </TabControl>
-        </materialDesign:Card>
+        </Border>
 
         <!-- STATUS BAR AT THE BOTTOM -->
-        <materialDesign:Card Grid.Row="4"
-                             Margin="10,0,10,10" 
-                             Background="{StaticResource PanelBackground}"
-                             UniformCornerRadius="4">
+        <Border Grid.Row="4" 
+                Background="{StaticResource PanelBackground}"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Margin="10,0,10,10">
             <StackPanel Orientation="Horizontal" Margin="8,4">
-                <materialDesign:PackIcon Kind="InformationOutline" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" 
+                           Foreground="{StaticResource TextColor}"/>
             </StackPanel>
-        </materialDesign:Card>
+        </Border>
     </Grid>
 </Window>

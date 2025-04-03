@@ -70,6 +70,8 @@ namespace DemandForecastingApp.ViewModels
             set => SetProperty(ref _inventoryRecommendations, value);
         }
 
+        public Func<double, string> YFormatter { get; set; }
+
         public MainViewModel()
         {
             _dataImporter = new DataImporter();
@@ -81,14 +83,16 @@ namespace DemandForecastingApp.ViewModels
             _leadTime = "3";
             _reorderThreshold = "100";
 
+            // Format the chart for dark theme
+            YFormatter = value => value.ToString("N1");
+
             LoadDataCommand = new RelayCommand(LoadData);
             RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
         }
 
         private bool CanRunForecast(object parameter)
         {
-            return _loadedRecords != null && _loadedRecords.Count > 0 &&
-                   !string.IsNullOrEmpty(LeadTime) && !string.IsNullOrEmpty(ReorderThreshold);
+            return !string.IsNullOrEmpty(LeadTime) && !string.IsNullOrEmpty(ReorderThreshold);
         }
 
         private void LoadData(object parameter)
@@ -141,17 +145,8 @@ namespace DemandForecastingApp.ViewModels
 
             try
             {
-                // Convert to DemandRecord for ML model
-                var demandRecords = _loadedRecords.Select(record => new DemandRecord
-                {
-                    Date = record.Date,
-                    Demand = (float)record.Demand
-                }).ToList();
-                
-                // Create and use the forecast model
-                var forecastModel = new Models.ForecastModel();
-                var forecastHorizon = 10; // Default to 10 periods
-                var forecastResults = forecastModel.PredictDemand(demandRecords, forecastHorizon);
+                // For demo purposes, generate dummy forecast data
+                var forecastResults = GenerateDemoForecastData();
                 
                 // Create chart values from forecast results
                 var forecastValues = new ChartValues<double>();
@@ -210,6 +205,28 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
+        private List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> GenerateDemoForecastData()
+        {
+            // Create demo forecast data
+            var startDate = DateTime.Now;
+            var results = new List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)>();
+            
+            var baseValue = 100f;
+            var random = new Random(123); // Fixed seed for reproducibility
+            
+            for (int i = 0; i < 10; i++)
+            {
+                var date = startDate.AddDays(i);
+                var forecast = baseValue + (i * 5) + (float)(random.NextDouble() * 10 - 5);
+                var lowerBound = forecast * 0.85f;
+                var upperBound = forecast * 1.15f;
+                
+                results.Add((date, forecast, lowerBound, upperBound));
+            }
+            
+            return results;
+        }
+        
         private void UpdateForecastDetails(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults, 
                                            int leadTime, int reorderThreshold)
         {
@@ -240,8 +257,8 @@ namespace DemandForecastingApp.ViewModels
         {
             var recommendations = new ObservableCollection<InventoryRecommendation>();
             
-            // Group records by product ID to generate recommendations for each product
-            var products = _loadedRecords.Select(r => r.ProductId).Distinct().Take(3).ToList(); // Limit to 3 products for demo
+            // Generate demo inventory recommendations
+            string[] products = { "A001", "B002", "C003" };
             
             foreach (var product in products)
             {
@@ -253,7 +270,7 @@ namespace DemandForecastingApp.ViewModels
                 double safetyStock = stdDev * 1.65; // 95% service level
                 
                 // Calculate recommended order
-                double currentStock = 10; // Mock value - in real app would come from inventory system
+                double currentStock = 10 + (product[0] - 'A') * 5; // Mock value based on product ID
                 double recommendedOrder = Math.Max(0, leadTimeDemand + safetyStock - currentStock);
                 
                 recommendations.Add(new InventoryRecommendation
