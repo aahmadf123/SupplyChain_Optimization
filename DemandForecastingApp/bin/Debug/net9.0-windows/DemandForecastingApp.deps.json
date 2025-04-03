@@ -10,6 +10,7 @@
         "dependencies": {
           "CsvHelper": "33.0.1",
           "LiveCharts.Wpf": "0.9.7",
+          "MaterialDesignThemes": "2.5.1",
           "Microsoft.ML": "4.0.2",
           "Microsoft.ML.TimeSeries": "4.0.2"
         },
@@ -41,6 +42,25 @@
           "lib/net45/LiveCharts.Wpf.dll": {
             "assemblyVersion": "0.9.7.0",
             "fileVersion": "0.9.7.0"
+          }
+        }
+      },
+      "MaterialDesignColors/1.1.2": {
+        "runtime": {
+          "lib/net45/MaterialDesignColors.dll": {
+            "assemblyVersion": "1.1.2.0",
+            "fileVersion": "1.1.2.0"
+          }
+        }
+      },
+      "MaterialDesignThemes/2.5.1": {
+        "dependencies": {
+          "MaterialDesignColors": "1.1.2"
+        },
+        "runtime": {
+          "lib/net45/MaterialDesignThemes.Wpf.dll": {
+            "assemblyVersion": "2.5.1.1345",
+            "fileVersion": "2.5.1.1345"
           }
         }
       },
@@ -297,6 +317,20 @@
       "sha512": "sha512-lv6YZoK0B4yWykMq5b9grZXtIbTj+OWu4sVN9GDpdgV6zffu64m4d5CW8KSjfSl9rB8VU649x1NZvhoU67hCDg==",
       "path": "livecharts.wpf/0.9.7",
       "hashPath": "livecharts.wpf.0.9.7.nupkg.sha512"
+    },
+    "MaterialDesignColors/1.1.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UKGf8lKSTJfUjgQwlDMwxFC2IJuUP59AquSF8D02j8V8gCG47B0Zmekd5ycHKrDP515zmbHGFwo6G5mpGVdDuQ==",
+      "path": "materialdesigncolors/1.1.2",
+      "hashPath": "materialdesigncolors.1.1.2.nupkg.sha512"
+    },
+    "MaterialDesignThemes/2.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ma1x0Ki+EF+zXzCEfGBlRt80qT726v1156FxJjUQDFS831sEw/HnYkZRt7bL/cqAA+mzLVHjxh93bur2uRGm3A==",
+      "path": "materialdesignthemes/2.5.1",
+      "hashPath": "materialdesignthemes.2.5.1.nupkg.sha512"
     },
     "Microsoft.ML/4.0.2": {
       "type": "package",

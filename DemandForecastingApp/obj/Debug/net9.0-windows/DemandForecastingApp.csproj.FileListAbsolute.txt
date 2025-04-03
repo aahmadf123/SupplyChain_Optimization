@@ -67,3 +67,6 @@ C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\obj\Debug\net9.0-win
 C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\obj\Debug\net9.0-windows\DemandForecastingApp.pdb
 C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\obj\Debug\net9.0-windows\DemandForecastingApp.genruntimeconfig.cache
 C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\obj\Debug\net9.0-windows\ref\DemandForecastingApp.dll
+C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\bin\Debug\net9.0-windows\MaterialDesignColors.dll
+C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\bin\Debug\net9.0-windows\MaterialDesignThemes.Wpf.dll
+C:\Users\firas\SupplyChainOptimization\DemandForecastingApp\obj\Debug\net9.0-windows\App.baml
