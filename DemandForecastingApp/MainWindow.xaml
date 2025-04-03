@@ -10,3 +10,44 @@
 
     </Grid>
 </Window>
+<Window x:Class="DemandForecastingApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DemandForecastingApp"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        mc:Ignorable="d"
+        Title="Demand Forecasting & Inventory Optimization" Height="600" Width="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Top row for input and configuration controls -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main row for displaying charts and other content -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top panel: Data input and configuration -->
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="10" HorizontalAlignment="Left">
+            <!-- Button for loading historical sales data -->
+            <Button Content="Load Data" Width="100" Margin="5" Click="LoadData_Click"/>
+            
+            <!-- Input for configurable parameter: Lead Time -->
+            <Label Content="Lead Time:" VerticalAlignment="Center" Margin="5"/>
+            <TextBox Name="LeadTimeTextBox" Width="80" Margin="5"/>
+            
+            <!-- Input for configurable parameter: Reorder Threshold -->
+            <Label Content="Reorder Threshold:" VerticalAlignment="Center" Margin="5"/>
+            <TextBox Name="ReorderThresholdTextBox" Width="80" Margin="5"/>
+            
+            <!-- Button to run the demand forecasting model -->
+            <Button Content="Run Forecast" Width="100" Margin="5" Click="RunForecast_Click"/>
+        </StackPanel>
+
+        <!-- Main content area: Chart display -->
+        <Grid Grid.Row="1" Margin="10">
+            <!-- LiveCharts CartesianChart to display forecasts and inventory recommendations -->
+            <lvc:CartesianChart Name="ForecastChart" />
+        </Grid>
+    </Grid>
+</Window>
