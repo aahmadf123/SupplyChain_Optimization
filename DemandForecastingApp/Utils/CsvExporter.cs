@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
+using DemandForecastingApp.Models;
 
 namespace DemandForecastingApp.Utils
 {
@@ -18,11 +19,12 @@ namespace DemandForecastingApp.Utils
                 {
                     csv.WriteRecords(data);
                 }
+                Logger.LogInfo($"Successfully exported data to {filePath}");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error exporting CSV: {ex.Message}");
+                Logger.LogError($"Error exporting CSV to {filePath}", ex);
                 return false;
             }
         }
@@ -36,22 +38,5 @@ namespace DemandForecastingApp.Utils
         {
             return ExportData(recommendations, filePath);
         }
-    }
-    
-    // These classes need to be accessible here for CSV export
-    public class ForecastDataPoint
-    {
-        public string Period { get; set; }
-        public double ForecastedDemand { get; set; }
-        public double LowerBound { get; set; }
-        public double UpperBound { get; set; }
-        public string ReorderPoint { get; set; }
-    }
-    
-    public class InventoryRecommendation
-    {
-        public string Item { get; set; }
-        public int CurrentStock { get; set; }
-        public int RecommendedOrder { get; set; }
     }
 }
