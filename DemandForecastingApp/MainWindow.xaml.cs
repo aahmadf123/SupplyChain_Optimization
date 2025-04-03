@@ -1,13 +1,4 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using Microsoft.Win32;
-using LiveCharts;
-using LiveCharts.Wpf;
-using DemandForecastingApp.Models;
-using DemandForecastingApp.Utils;
+﻿using System.Windows;
 using DemandForecastingApp.ViewModels;
 
 namespace DemandForecastingApp
