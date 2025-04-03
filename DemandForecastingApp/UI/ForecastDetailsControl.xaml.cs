@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 
 namespace DemandForecastingApp.UI
@@ -7,10 +8,22 @@ namespace DemandForecastingApp.UI
     /// </summary>
     public partial class ForecastDetailsControl : UserControl
     {
+        private ObservableCollection<ForecastDataPoint> _forecastData;
+        
         public ForecastDetailsControl()
         {
             InitializeComponent();
-            // TODO: Bind ForecastDataGrid to your forecast details data source.
+            _forecastData = new ObservableCollection<ForecastDataPoint>();
+            ForecastDataGrid.ItemsSource = _forecastData;
+        }
+        
+        public void UpdateForecastData(ObservableCollection<ForecastDataPoint> newData)
+        {
+            _forecastData.Clear();
+            foreach (var item in newData)
+            {
+                _forecastData.Add(item);
+            }
         }
     }
 }
