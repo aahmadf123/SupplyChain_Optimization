@@ -4,6 +4,10 @@
              xmlns:local="clr-namespace:DemandForecastingApp"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Empty ResourceDictionary to be filled at MainWindow level for theme control -->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

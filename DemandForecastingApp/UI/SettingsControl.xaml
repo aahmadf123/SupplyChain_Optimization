@@ -1,0 +1,51 @@
+<UserControl x:Class="DemandForecastingApp.UI.SettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    
+    <ScrollViewer Background="Transparent">
+        <StackPanel Margin="20">
+            <TextBlock Text="Application Settings" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,20"/>
+            
+            <GroupBox Header="API Configuration" Margin="0,10,0,20">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Alpha Vantage API Key:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtApiKey" Margin="0,0,0,10" Width="300" HorizontalAlignment="Left"/>
+                    <TextBlock Text="Note: A free Alpha Vantage API key has limited calls per day"
+                               Foreground="Gray" FontStyle="Italic" TextWrapping="Wrap"/>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="Forecasting Settings" Margin="0,10,0,20">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Default Lead Time:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtDefaultLeadTime" Text="3" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                    
+                    <TextBlock Text="Default Reorder Threshold:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtDefaultReorderThreshold" Text="100" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                    
+                    <TextBlock Text="Forecast Horizon (Days):" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtForecastHorizon" Text="10" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="LSTM Model Settings" Margin="0,10,0,20">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Training Epochs:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtTrainingEpochs" Text="5" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                    
+                    <TextBlock Text="Time Steps:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtTimeSteps" Text="10" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                    
+                    <TextBlock Text="Batch Size:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="txtBatchSize" Text="32" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </GroupBox>
+            
+            <Button Content="Save Settings" Click="SaveSettings_Click" 
+                    Width="120" Height="30" HorizontalAlignment="Left" Margin="0,20,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
