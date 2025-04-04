@@ -60,10 +60,10 @@ namespace DemandForecastingApp.Services
                     var root = doc.RootElement;
                     if (root.TryGetProperty("Global Quote", out var quote))
                     {
-                        string symbol = quote.TryGetProperty("01. symbol", out var sym) ? sym.GetString() : "SPY";
-                        string price = quote.TryGetProperty("05. price", out var p) ? p.GetString() : "N/A";
-                        string change = quote.TryGetProperty("09. change", out var c) ? c.GetString() : "0";
-                        string changePercent = quote.TryGetProperty("10. change percent", out var cp) ? cp.GetString() : "0%";
+                        string symbol = quote.TryGetProperty("01. symbol", out var sym) ? sym.GetString() ?? "SPY" : "SPY";
+                        string price = quote.TryGetProperty("05. price", out var p) ? p.GetString() ?? "N/A" : "N/A";
+                        string change = quote.TryGetProperty("09. change", out var c) ? c.GetString() ?? "0" : "0";
+                        string changePercent = quote.TryGetProperty("10. change percent", out var cp) ? cp.GetString() ?? "0%" : "0%";
                         
                         double changeValue = 0;
                         if (double.TryParse(change, out double changeVal))
@@ -74,8 +74,8 @@ namespace DemandForecastingApp.Services
                         indicators.Add(new MarketIndicator
                         {
                             Key = "S&P 500 ETF",
-                            Value = price,
-                            Change = changePercent,
+                            Value = price ?? "N/A",
+                            Change = changePercent ?? "0%",
                             Impact = changeValue >= 0 ? "Positive" : "Negative"
                         });
                     }
@@ -111,9 +111,9 @@ namespace DemandForecastingApp.Services
                         var latest = data[0];
                         var previous = data[1];
                         
-                        string latestDate = latest.TryGetProperty("date", out var date) ? date.GetString() : "";
-                        string latestValue = latest.TryGetProperty("value", out var val) ? val.GetString() : "N/A";
-                        string previousValue = previous.TryGetProperty("value", out var prevVal) ? prevVal.GetString() : "N/A";
+                        string latestDate = latest.TryGetProperty("date", out var date) ? date.GetString() ?? "" : "";
+                        string latestValue = latest.TryGetProperty("value", out var val) ? val.GetString() ?? "N/A" : "N/A";
+                        string previousValue = previous.TryGetProperty("value", out var prevVal) ? prevVal.GetString() ?? "N/A" : "N/A";
                         
                         double change = 0;
                         double changePercent = 0;
@@ -142,7 +142,7 @@ namespace DemandForecastingApp.Services
                         indicators.Add(new MarketIndicator
                         {
                             Key = displayName,
-                            Value = latestValue,
+                            Value = latestValue ?? "N/A",
                             Change = $"{changePercent:+0.00;-0.00;0.00}%",
                             Impact = impact
                         });
@@ -176,13 +176,13 @@ namespace DemandForecastingApp.Services
                         foreach (var property in realtimePerf.EnumerateObject())
                         {
                             var sectorName = property.Name;
-                            var performance = property.Value.GetString();
+                            var performance = property.Value.GetString() ?? "N/A";
                             
                             quotes.Add(new StockQuote
                             {
                                 Symbol = sectorName,
                                 Price = "N/A", // Not available in sector performance
-                                Change = performance
+                                Change = performance ?? "N/A"
                             });
                         }
                     }

@@ -14,7 +14,7 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using Microsoft.Win32;
-
+using MessageBox = System.Windows.MessageBox;
 namespace DemandForecastingApp.ViewModels
 {
     public class MainViewModel : ViewModelBase
