@@ -12,6 +12,11 @@ using DemandForecastingApp.Utils;
 using LiveCharts;
 using LiveCharts.Wpf;
 using Microsoft.Win32;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.Kernel.SkiaSharp;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
 
 namespace DemandForecastingApp.ViewModels
 {
@@ -34,6 +39,9 @@ namespace DemandForecastingApp.ViewModels
         private List<string> _labels;
         private string _selectedModelType;
         private bool _isRossmannDataLoaded;
+        private IEnumerable<ISeries> _chartSeries;
+        private IEnumerable<Axis> _chartXAxes;
+        private IEnumerable<Axis> _chartYAxes;
 
         public ICommand LoadDataCommand { get; }
         public ICommand RunForecastCommand { get; }
@@ -101,6 +109,24 @@ namespace DemandForecastingApp.ViewModels
 
         public Func<double, string> YFormatter { get; set; }
 
+        public IEnumerable<ISeries> ChartSeries
+        {
+            get => _chartSeries;
+            set => SetProperty(ref _chartSeries, value);
+        }
+
+        public IEnumerable<Axis> ChartXAxes
+        {
+            get => _chartXAxes;
+            set => SetProperty(ref _chartXAxes, value);
+        }
+
+        public IEnumerable<Axis> ChartYAxes
+        {
+            get => _chartYAxes;
+            set => SetProperty(ref _chartYAxes, value);
+        }
+
         public MainViewModel()
         {
             _dataImporter = new DataImporter();
@@ -127,14 +153,48 @@ namespace DemandForecastingApp.ViewModels
             
             // Initialize with empty market data
             Task.Run(async () => await FetchMarketDataAsync());
+
+            // Initialize chart with empty data
+            _chartSeries = new ISeries[]
+            {
+                new LineSeries<double>
+                {
+                    Values = new double[] { },
+                    Name = "Forecast",
+                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryFill = new SolidColorPaint(SKColors.White),
+                    GeometrySize = 10
+                }
+            };
+            
+            _chartXAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Date",
+                    Labels = new string[] { },
+                    TextSize = 12,
+                    LabelsRotation = 45
+                }
+            };
+            
+            _chartYAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Sales",
+                    TextSize = 12
+                }
+            };
         }
 
-        private bool CanRunForecast(object parameter)
+        private bool CanRunForecast(object? parameter)
         {
             return !string.IsNullOrEmpty(LeadTime) && !string.IsNullOrEmpty(ReorderThreshold);
         }
 
-        private async void LoadData(object parameter)
+        private async void LoadData(object? parameter)
         {
             try
             {
@@ -239,7 +299,7 @@ namespace DemandForecastingApp.ViewModels
             }
         }
 
-        private async void RunForecast(object parameter)
+        private async void RunForecast(object? parameter)
         {
             // Validate the input parameters for Lead Time and Reorder Threshold.
             if (!int.TryParse(LeadTime, out int leadTime))
@@ -300,47 +360,8 @@ namespace DemandForecastingApp.ViewModels
                     forecastResults = GenerateDemoForecastData();
                 }
                 
-                // Create chart values from forecast results
-                var forecastValues = new ChartValues<double>();
-                var lowerBoundValues = new ChartValues<double>();
-                var upperBoundValues = new ChartValues<double>();
-                var labels = new List<string>();
-                
-                foreach (var result in forecastResults)
-                {
-                    forecastValues.Add(result.Forecast);
-                    lowerBoundValues.Add(result.LowerBound);
-                    upperBoundValues.Add(result.UpperBound);
-                    labels.Add(result.Date.ToString("MMM dd"));
-                }
-                
-                // Create a new series collection for the chart
-                var seriesCollection = new SeriesCollection
-                {
-                    new LineSeries
-                    {
-                        Title = "Forecast",
-                        Values = forecastValues
-                    },
-                    new LineSeries
-                    {
-                        Title = "Lower Bound",
-                        Values = lowerBoundValues,
-                        Stroke = System.Windows.Media.Brushes.LightBlue,
-                        Fill = System.Windows.Media.Brushes.Transparent
-                    },
-                    new LineSeries
-                    {
-                        Title = "Upper Bound",
-                        Values = upperBoundValues,
-                        Stroke = System.Windows.Media.Brushes.LightBlue,
-                        Fill = System.Windows.Media.Brushes.Transparent
-                    }
-                };
-                
-                // Update the chart
-                ForecastSeries = seriesCollection;
-                ChartLabels = labels;
+                // Update the chart with LiveChartsCore
+                UpdateForecastChart(forecastResults);
                 
                 // Update forecast details and inventory recommendations
                 UpdateForecastDetails(forecastResults, leadTime, reorderThreshold);
@@ -443,7 +464,7 @@ namespace DemandForecastingApp.ViewModels
             InventoryRecommendations = recommendations;
         }
         
-        private async Task FetchMarketDataAsync()
+        private async Task FetchMarketDataAsync(object? parameter = null)
         {
             try
             {
@@ -525,6 +546,62 @@ namespace DemandForecastingApp.ViewModels
             
             // Return a value between -1 and 1
             return Math.Max(-1, Math.Min(1, baseCorrelation + adjustment * 0.2));
+        }
+
+        private void UpdateForecastChart(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults)
+        {
+            var labels = forecastResults.Select(r => r.Date.ToString("MMM dd")).ToArray();
+            
+            var forecastValues = forecastResults.Select(r => (double)r.Forecast).ToArray();
+            var lowerBoundValues = forecastResults.Select(r => (double)r.LowerBound).ToArray();
+            var upperBoundValues = forecastResults.Select(r => (double)r.UpperBound).ToArray();
+            
+            ChartSeries = new ISeries[]
+            {
+                new LineSeries<double>
+                {
+                    Values = forecastValues,
+                    Name = "Forecast",
+                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryFill = new SolidColorPaint(SKColors.White),
+                    GeometrySize = 6
+                },
+                new LineSeries<double>
+                {
+                    Values = lowerBoundValues,
+                    Name = "Lower Bound",
+                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
+                    GeometrySize = 0
+                },
+                new LineSeries<double>
+                {
+                    Values = upperBoundValues,
+                    Name = "Upper Bound",
+                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
+                    GeometrySize = 0
+                }
+            };
+            
+            ChartXAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Date",
+                    Labels = labels,
+                    TextSize = 12,
+                    LabelsRotation = 45
+                }
+            };
+            
+            ChartYAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Sales",
+                    TextSize = 12
+                }
+            };
         }
     }
 }
