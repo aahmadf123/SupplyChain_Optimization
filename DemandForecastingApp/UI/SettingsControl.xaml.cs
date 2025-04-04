@@ -20,7 +20,7 @@ namespace DemandForecastingApp.UI
             LoadSettings();
             
             // Load settings
-            txtApiKey.Text = AppSettings.GetSetting("AlphaVantageApiKey", "");
+            txtApiKey.Text = Utils.AppSettings.GetSetting("AlphaVantageApiKey", "");
         }
 
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
@@ -35,7 +35,7 @@ namespace DemandForecastingApp.UI
             string mlModelParameter = MLModelParameterTextBox.Text;
             
             // Create settings object and save
-            var settings = new AppSettings
+            var settings = new AppSettingsData
             {
                 ForecastHorizon = forecastHorizon,
                 MLModelParameter = mlModelParameter,
@@ -45,7 +45,7 @@ namespace DemandForecastingApp.UI
             try
             {
                 // Serialize settings to XML
-                var serializer = new XmlSerializer(typeof(AppSettings));
+                var serializer = new XmlSerializer(typeof(AppSettingsData));
                 using (var writer = new StreamWriter(_settingsFilePath))
                 {
                     serializer.Serialize(writer, settings);
@@ -59,7 +59,7 @@ namespace DemandForecastingApp.UI
             }
             
             // Save API key
-            AppSettings.SaveSetting("AlphaVantageApiKey", txtApiKey.Text);
+            Utils.AppSettings.SaveSetting("AlphaVantageApiKey", txtApiKey.Text);
             
             MessageBox.Show("Settings saved successfully. Changes will take effect the next time you fetch market data.",
                            "Settings Saved", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -71,10 +71,10 @@ namespace DemandForecastingApp.UI
             {
                 if (File.Exists(_settingsFilePath))
                 {
-                    var serializer = new XmlSerializer(typeof(AppSettings));
+                    var serializer = new XmlSerializer(typeof(AppSettingsData));
                     using (var reader = new StreamReader(_settingsFilePath))
                     {
-                        var settings = (AppSettings)serializer.Deserialize(reader);
+                        var settings = (AppSettingsData)serializer.Deserialize(reader);
                         ForecastHorizonTextBox.Text = settings.ForecastHorizon.ToString();
                         MLModelParameterTextBox.Text = settings.MLModelParameter;
                     }
@@ -96,12 +96,12 @@ namespace DemandForecastingApp.UI
         }
     }
     
-    // Settings class for serialization
+    // Settings class for serialization - renamed to avoid conflict
     [Serializable]
-    public class AppSettings
+    public class AppSettingsData
     {
         public int ForecastHorizon { get; set; }
-        public string MLModelParameter { get; set; }
+        public string MLModelParameter { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
     }
 }

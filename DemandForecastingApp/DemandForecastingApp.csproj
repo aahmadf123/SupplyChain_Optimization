@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <!-- Chart libraries -->
-    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc2" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-beta.801" />
     
     <!-- Machine Learning libraries -->
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
