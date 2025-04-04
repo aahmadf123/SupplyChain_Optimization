@@ -10,20 +10,20 @@ namespace DemandForecastingApp.Models
         public float? Sales { get; set; }
         public int? Customers { get; set; }
         public int Open { get; set; }
-        public string StateHoliday { get; set; }
+        public required string StateHoliday { get; set; }
         public int SchoolHoliday { get; set; }
         public int Promo { get; set; }
         
         // Fields from store data
-        public string StoreType { get; set; }
-        public string Assortment { get; set; }
+        public required string StoreType { get; set; }
+        public required string Assortment { get; set; }
         public int? CompetitionDistance { get; set; }
         public int? CompetitionOpenSinceMonth { get; set; }
         public int? CompetitionOpenSinceYear { get; set; }
         public int Promo2 { get; set; }
         public int? Promo2SinceWeek { get; set; }
         public int? Promo2SinceYear { get; set; }
-        public string PromoInterval { get; set; }
+        public required string PromoInterval { get; set; }
         
         // Engineered features
         public int Year { get; set; }

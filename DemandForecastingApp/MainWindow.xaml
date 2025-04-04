@@ -75,20 +75,21 @@
                            FontSize="16" FontWeight="Medium" Margin="5,0,0,10"/>
                 
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <Button Style="{StaticResource FuturisticButton}" Margin="5,0" 
-                            Command="{Binding LoadDataCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Load Data" Margin="5"/>
-                        </StackPanel>
-                    </Button>
+                    <Button Content="Load Data" Click="LoadDataButton_Click" 
+                            Background="#6A5ACD" Foreground="White" 
+                            FontWeight="Bold" Padding="10,5" Margin="5,0" />
                     
-                    <TextBlock Text="Lead Time:" Foreground="{StaticResource TextBrush}" 
-                               VerticalAlignment="Center" Margin="15,0,5,0"/>
-                    <TextBox Text="{Binding LeadTime, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,10,0"/>
+                    <Label Content="Lead Time:" 
+                           Foreground="White" FontWeight="Bold" Margin="5,0" />
+                    <TextBox x:Name="LeadTimeTextBox" 
+                             Background="White" Foreground="Black" 
+                             FontWeight="Bold" Margin="5,0" />
                     
-                    <TextBlock Text="Reorder Threshold:" Foreground="{StaticResource TextBrush}" 
-                               VerticalAlignment="Center" Margin="10,0,5,0"/>
-                    <TextBox Text="{Binding ReorderThreshold, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,10,0"/>
+                    <Label Content="Reorder Threshold:" 
+                           Foreground="White" FontWeight="Bold" Margin="5,0" />
+                    <TextBox x:Name="ReorderThresholdTextBox" 
+                             Background="White" Foreground="Black" 
+                             FontWeight="Bold" Margin="5,0" />
                     
                     <Button Style="{StaticResource AccentButton}" Margin="10,0,5,0" 
                             Command="{Binding RunForecastCommand}">
@@ -107,10 +108,12 @@
         <!-- CHART DISPLAY AREA -->
         <Border Grid.Row="1" Background="{StaticResource PanelBrush}" Margin="10" CornerRadius="5">
             <!-- Update to use LiveChartsCore -->
-            <lvc:CartesianChart Series="{Binding ChartSeries}" 
-                                XAxes="{Binding ChartXAxes}"
-                                YAxes="{Binding ChartYAxes}"
-                                Margin="10"/>
+            <lvc:CartesianChart 
+                Series="{Binding ChartSeries}" 
+                XAxes="{Binding ChartXAxes}"
+                YAxes="{Binding ChartYAxes}"
+                Margin="10"/>
+            <!-- Using LiveChartsCore.SkiaSharpView.WPF CartesianChart -->
         </Border>
 
         <!-- GRID SPLITTER -->
@@ -118,17 +121,8 @@
                       Height="5" Background="#3F3F5F" ShowsPreview="True"/>
 
         <!-- TAB CONTROL -->
-        <TabControl Grid.Row="3" Background="{StaticResource PanelBrush}" Margin="10" 
+        <TabControl Grid.Row="3" Background="#3A3A3A" Foreground="White" FontWeight="Bold" Margin="10" 
                     BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <TabControl.Resources>
-                <Style TargetType="TabItem">
-                    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                    <Setter Property="Padding" Value="10,5"/>
-                </Style>
-            </TabControl.Resources>
-            
             <TabItem Header="Forecast Details">
                 <DataGrid ItemsSource="{Binding ForecastPoints}" AutoGenerateColumns="False" IsReadOnly="True" 
                           Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
@@ -143,7 +137,7 @@
                 </DataGrid>
             </TabItem>
             
-            <TabItem Header="Inventory Recommendations">
+            <TabItem Header="Inventory Recommendations" Background="#3A3A3A" Foreground="White">
                 <DataGrid ItemsSource="{Binding InventoryRecommendations}" AutoGenerateColumns="False" IsReadOnly="True" 
                           Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
                           GridLinesVisibility="All" HeadersVisibility="All">
@@ -157,7 +151,7 @@
                 </DataGrid>
             </TabItem>
             
-            <TabItem Header="Market Analysis">
+            <TabItem Header="Market Analysis" Background="#3A3A3A" Foreground="White">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -272,7 +266,7 @@
                 </Grid>
             </TabItem>
             
-            <TabItem Header="Settings">
+            <TabItem Header="Settings" Background="#3A3A3A" Foreground="White">
                 <ui:SettingsControl/>
             </TabItem>
         </TabControl>

@@ -94,91 +94,195 @@ namespace DemandForecastingApp.Data
             }
         }
         
-        private void ImportStoreData(string storeFilePath)
+        public static List<StoreRecord> ImportStoreData(string storeFilePath)
         {
-            if (!File.Exists(storeFilePath))
+            var storeData = new List<StoreRecord>();
+
+            try
             {
-                throw new FileNotFoundException($"Store data file not found: {storeFilePath}");
-            }
-            
-            _storeRecords.Clear();
-            var lines = File.ReadAllLines(storeFilePath);
-            
-            // Skip header
-            for (int i = 1; i < lines.Length; i++)
-            {
-                var fields = lines[i].Split(',');
-                if (fields.Length < 10) continue; // Skip invalid lines
-                
-                try
+                Console.WriteLine($"Attempting to load store data from: {storeFilePath}");
+
+                if (!File.Exists(storeFilePath))
                 {
-                    var store = new RossmannStoreRecord
+                    Console.WriteLine($"File not found: {storeFilePath}");
+                    return storeData;
+                }
+
+                var lines = File.ReadAllLines(storeFilePath);
+                if (lines.Length <= 1)
+                {
+                    Console.WriteLine("The file is empty or contains only headers.");
+                    return storeData;
+                }
+
+                for (int i = 1; i < lines.Length; i++) // Skip the header row
+                {
+                    var line = lines[i];
+                    var columns = line.Split(',');
+
+                    if (columns.Length < 10) // Ensure there are enough columns
                     {
-                        StoreId = int.Parse(fields[0]),
-                        StoreType = fields[1],
-                        Assortment = fields[2],
-                        CompetitionDistance = ParseNullableInt(fields[3]),
-                        CompetitionOpenSinceMonth = ParseNullableInt(fields[4]),
-                        CompetitionOpenSinceYear = ParseNullableInt(fields[5]),
-                        Promo2 = int.Parse(fields[6]),
-                        Promo2SinceWeek = ParseNullableInt(fields[7]),
-                        Promo2SinceYear = ParseNullableInt(fields[8]),
-                        PromoInterval = fields[9]
-                    };
-                    
-                    _storeRecords.Add(store);
+                        Console.WriteLine($"Skipping invalid or incomplete line {i + 1}: {line}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        var record = new StoreRecord
+                        {
+                            StoreId = int.Parse(columns[0]),
+                            StoreType = columns[1],
+                            Assortment = columns[2],
+                            CompetitionDistance = string.IsNullOrWhiteSpace(columns[3]) ? (double?)null : double.Parse(columns[3]),
+                            CompetitionOpenSinceMonth = string.IsNullOrWhiteSpace(columns[4]) ? (int?)null : int.Parse(columns[4]),
+                            CompetitionOpenSinceYear = string.IsNullOrWhiteSpace(columns[5]) ? (int?)null : int.Parse(columns[5]),
+                            Promo2 = columns[6] == "1",
+                            Promo2SinceWeek = string.IsNullOrWhiteSpace(columns[7]) ? (int?)null : int.Parse(columns[7]),
+                            Promo2SinceYear = string.IsNullOrWhiteSpace(columns[8]) ? (int?)null : int.Parse(columns[8]),
+                            PromoInterval = columns[9]
+                        };
+                        storeData.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing line {i + 1}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogWarning($"Error parsing store record at line {i+1}: {ex.Message}");
-                }
+
+                Console.WriteLine($"Successfully loaded {storeData.Count} store records.");
             }
-            
-            Logger.LogInfo($"Imported {_storeRecords.Count} store records from {storeFilePath}");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading store data: {ex.Message}");
+            }
+
+            return storeData;
         }
-        
-        private void ImportSalesData(string salesFilePath)
+
+        public static List<DemandRecord> ImportSalesData(string salesFilePath)
         {
-            if (!File.Exists(salesFilePath))
+            var salesData = new List<DemandRecord>();
+
+            try
             {
-                throw new FileNotFoundException($"Sales data file not found: {salesFilePath}");
-            }
-            
-            _salesRecords.Clear();
-            var lines = File.ReadAllLines(salesFilePath);
-            
-            // For large files, read only a subset to avoid memory issues
-            const int MAX_RECORDS = 50000;  // Adjust based on your system capabilities
-            
-            // Skip header
-            for (int i = 1; i < lines.Length && (_salesRecords.Count < MAX_RECORDS); i++)
-            {
-                var fields = lines[i].Split(',');
-                if (fields.Length < 9) continue; // Skip invalid lines
-                
-                try
+                // Log the file path being used
+                Console.WriteLine($"Attempting to load sales data from: {salesFilePath}");
+
+                if (!File.Exists(salesFilePath))
                 {
-                    var record = new RossmannSalesRecord
+                    Console.WriteLine($"File not found: {salesFilePath}");
+                    return salesData;
+                }
+
+                var lines = File.ReadAllLines(salesFilePath);
+                if (lines.Length <= 1)
+                {
+                    Console.WriteLine("The file is empty or contains only headers.");
+                    return salesData;
+                }
+
+                // Parse the CSV file
+                for (int i = 1; i < lines.Length; i++) // Skip the header row
+                {
+                    var line = lines[i];
+                    var columns = line.Split(',');
+
+                    if (columns.Length < 9) // Ensure there are enough columns
                     {
-                        StoreId = int.Parse(fields[0]),
-                        Date = DateTime.ParseExact(fields[2], "yyyy-MM-dd", CultureInfo.InvariantCulture),
-                        Sales = ParseNullableFloat(fields[3]),
-                        Customers = ParseNullableInt(fields[4]),
-                        Open = int.Parse(fields[5]),
-                        StateHoliday = fields[6],
-                        SchoolHoliday = int.Parse(fields[7]),
-                        Promo = int.Parse(fields[8])
-                    };
-                    
-                    _salesRecords.Add(record);
+                        Console.WriteLine($"Skipping invalid or incomplete line {i + 1}: {line}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        var record = new DemandRecord
+                        {
+                            StoreId = int.Parse(columns[0]),
+                            Date = DateTime.Parse(columns[2]),
+                            Sales = double.Parse(columns[3]),
+                            Customers = int.Parse(columns[4]),
+                            Open = int.Parse(columns[5]) == 1,
+                            Promo = int.Parse(columns[6]) == 1,
+                            StateHoliday = columns[7],
+                            SchoolHoliday = int.Parse(columns[8]) == 1
+                        };
+                        salesData.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing line {i + 1}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogWarning($"Error parsing sales record at line {i+1}: {ex.Message}");
-                }
+
+                Console.WriteLine($"Successfully loaded {salesData.Count} sales records.");
             }
-            
-            Logger.LogInfo($"Imported {_salesRecords.Count} sales records from {salesFilePath} (limited to {MAX_RECORDS})");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading sales data: {ex.Message}");
+            }
+
+            return salesData;
+        }
+
+        public static List<DemandRecord> ImportTestData(string testFilePath)
+        {
+            var testData = new List<DemandRecord>();
+
+            try
+            {
+                Console.WriteLine($"Attempting to load test data from: {testFilePath}");
+
+                if (!File.Exists(testFilePath))
+                {
+                    Console.WriteLine($"File not found: {testFilePath}");
+                    return testData;
+                }
+
+                var lines = File.ReadAllLines(testFilePath);
+                if (lines.Length <= 1)
+                {
+                    Console.WriteLine("The file is empty or contains only headers.");
+                    return testData;
+                }
+
+                for (int i = 1; i < lines.Length; i++) // Skip the header row
+                {
+                    var line = lines[i];
+                    var columns = line.Split(',');
+
+                    if (columns.Length < 8) // Ensure there are enough columns
+                    {
+                        Console.WriteLine($"Skipping invalid or incomplete line {i + 1}: {line}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        var record = new DemandRecord
+                        {
+                            StoreId = int.Parse(columns[1]),
+                            Date = DateTime.Parse(columns[3]),
+                            Open = columns[4] == "1",
+                            Promo = columns[5] == "1",
+                            StateHoliday = columns[6],
+                            SchoolHoliday = columns[7] == "1"
+                        };
+                        testData.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing line {i + 1}: {ex.Message}");
+                    }
+                }
+
+                Console.WriteLine($"Successfully loaded {testData.Count} test records.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading test data: {ex.Message}");
+            }
+
+            return testData;
         }
         
         private void MergeStoreAndSalesData()

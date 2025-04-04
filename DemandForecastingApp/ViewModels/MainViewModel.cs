@@ -22,9 +22,9 @@ namespace DemandForecastingApp.ViewModels
         private readonly DataImporter _dataImporter;
         private RossmannDataImporter _rossmannDataImporter;
         private MarketDataService _marketDataService;
-        private LSTMForecaster _lstmForecaster;
-        private List<Data.Record> _loadedRecords;
-        private List<RossmannSalesRecord> _rossmannRecords;
+        private LSTMForecaster? _lstmForecaster;
+        // Removing unused field _loadedRecords
+        private List<RossmannSalesRecord>? _rossmannRecords;
         private string _leadTime;
         private string _reorderThreshold;
         private string _statusMessage;
@@ -117,7 +117,7 @@ namespace DemandForecastingApp.ViewModels
 
         public MainViewModel()
         {
-            _dataImporter = new DataImporter();
+            _dataImporter = new DataImporter { ProductId = "DefaultProduct" };
             _rossmannDataImporter = new RossmannDataImporter();
             _marketDataService = new MarketDataService();
             
@@ -193,7 +193,7 @@ namespace DemandForecastingApp.ViewModels
                     _isRossmannDataLoaded = true;
                 });
                 
-                StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                StatusMessage = $"Loaded {_rossmannRecords?.Count ?? 0} Rossmann sales records";
                 
                 // If LSTM is selected, train model (this can take time)
                 if (SelectedModelType.Contains("LSTM"))
@@ -230,7 +230,7 @@ namespace DemandForecastingApp.ViewModels
                             _isRossmannDataLoaded = true;
                         });
                         
-                        StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                        StatusMessage = $"Loaded {_rossmannRecords?.Count ?? 0} Rossmann sales records";
                         
                         // If LSTM is selected, train model (this can take time)
                         if (SelectedModelType.Contains("LSTM"))
@@ -263,10 +263,10 @@ namespace DemandForecastingApp.ViewModels
                     _lstmForecaster = new LSTMForecaster();
                     
                     // Use a subset for training to keep it manageable
-                    var trainingData = _rossmannRecords
+                    var trainingData = _rossmannRecords?
                         .Where(r => r.Sales.HasValue)
                         .Take(10000)  // Limit for demo purposes
-                        .ToList();
+                        .ToList() ?? new List<RossmannSalesRecord>();
                     
                     _lstmForecaster.Train(trainingData, epochs: 5);  // Reduced epochs for demo
                 });
@@ -311,10 +311,10 @@ namespace DemandForecastingApp.ViewModels
                         
                         // Use LSTM forecaster
                         StatusMessage = "Running LSTM forecast...";
-                        forecastResults = await Task.Run(() => _lstmForecaster.PredictSales(
-                            _rossmannRecords.Where(r => r.Sales.HasValue).Take(1000).ToList(),
+                        forecastResults = await Task.Run(() => _lstmForecaster?.PredictSales(
+                            _rossmannRecords?.Where(r => r.Sales.HasValue).Take(1000).ToList() ?? new List<RossmannSalesRecord>(),
                             10 // horizon days
-                        ));
+                        ) ?? new List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)>());
                     }
                     else
                     {
@@ -322,13 +322,14 @@ namespace DemandForecastingApp.ViewModels
                         StatusMessage = "Running SSA forecast on Rossmann data...";
                         
                         // Convert Rossmann records to DemandRecord format
-                        var demandRecords = _rossmannRecords
+                        var demandRecords = _rossmannRecords?
                             .Where(r => r.Sales.HasValue)
                             .Take(1000)  // Limit for demo
                             .Select(r => new DemandRecord
                             {
                                 Date = r.Date,
-                                Demand = r.Sales.Value
+                                Sales = r.Sales ?? 0,
+                                StateHoliday = r.StateHoliday ?? "0"  // Default to "0" if null, matching Rossmann dataset format
                             })
                             .ToList();
                         
@@ -417,7 +418,7 @@ namespace DemandForecastingApp.ViewModels
             
             // For demo, use store IDs from Rossmann if available
             var storeIds = _isRossmannDataLoaded
-                ? _rossmannRecords.Select(r => r.StoreId).Distinct().Take(5).ToList()
+                ? _rossmannRecords?.Select(r => r.StoreId).Distinct().Take(5).ToList() ?? new List<int> { 1, 2, 3, 4, 5 }
                 : new List<int> { 1, 2, 3, 4, 5 };
             
             foreach (var storeId in storeIds)
@@ -479,13 +480,13 @@ namespace DemandForecastingApp.ViewModels
             return Math.Sqrt(sum / (enumerable.Length - 1));
         }
 
-        public async Task<Dictionary<string, double>> AnalyzeMarketCorrelations()
+        public Task<Dictionary<string, double>> AnalyzeMarketCorrelations()
         {
             try
             {
                 if (ForecastPoints == null || ForecastPoints.Count == 0 || MarketData == null || MarketData.Count == 0)
                 {
-                    return new Dictionary<string, double>();
+                    return Task.FromResult(new Dictionary<string, double>());
                 }
                 
                 // Get forecast values
@@ -507,12 +508,12 @@ namespace DemandForecastingApp.ViewModels
                     }
                 }
                 
-                return correlations;
+                return Task.FromResult(correlations);
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error analyzing market correlations", ex);
-                return new Dictionary<string, double>();
+                return Task.FromResult(new Dictionary<string, double>());
             }
         }
 

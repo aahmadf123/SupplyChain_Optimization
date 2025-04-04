@@ -30,9 +30,10 @@ namespace DemandForecastingApp.Services
                 }
                 
                 // Third try: Check absolute path
-                string absolutePath = Path.Combine(
-                    Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory),
-                    "Data");
+                string? directoryName = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+                string absolutePath = directoryName != null
+                    ? Path.Combine(directoryName, "Data")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
                     
                 if (Directory.Exists(absolutePath))
                 {
@@ -40,9 +41,10 @@ namespace DemandForecastingApp.Services
                 }
                 
                 // Fourth try: Check one level up from base directory
-                string oneUp = Path.Combine(
-                    Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).FullName,
-                    "Data");
+                DirectoryInfo? parentDir = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory);
+                string oneUp = parentDir != null
+                    ? Path.Combine(parentDir.FullName, "Data")
+                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
                     
                 if (Directory.Exists(oneUp))
                 {
