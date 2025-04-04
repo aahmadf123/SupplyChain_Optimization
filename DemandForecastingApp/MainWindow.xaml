@@ -108,11 +108,10 @@
         <!-- CHART DISPLAY AREA -->
         <Border Grid.Row="1" Background="{StaticResource PanelBrush}" Margin="10" CornerRadius="5">
             <!-- Update to use LiveChartsCore -->
-            <lvc:CartesianChart 
-                Series="{Binding ChartSeries}" 
-                XAxes="{Binding ChartXAxes}"
-                YAxes="{Binding ChartYAxes}"
-                Margin="10"/>
+            <lvc:CartesianChart Series="{Binding ChartSeries}" 
+                                XAxes="{Binding ChartXAxes}"
+                                YAxes="{Binding ChartYAxes}"
+                                Margin="10"/>
             <!-- Using LiveChartsCore.SkiaSharpView.WPF CartesianChart -->
         </Border>
 
