@@ -69,6 +69,14 @@
             "Microsoft.ML.TimeSeries": {
               "target": "Package",
               "version": "[4.0.2, )"
+            },
+            "NumSharp": {
+              "target": "Package",
+              "version": "[0.30.0, )"
+            },
+            "TensorFlow.NET": {
+              "target": "Package",
+              "version": "[0.100.0, )"
             }
           },
           "imports": [
