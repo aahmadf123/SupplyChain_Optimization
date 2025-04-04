@@ -6,5 +6,6 @@ namespace DemandForecastingApp.Models
     {
         public DateTime Date { get; set; }
         public float Demand { get; set; }
+        public string? ProductId { get; set; }
     }
 }

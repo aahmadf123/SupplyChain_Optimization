@@ -1,14 +1,15 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using DemandForecastingApp.ViewModels;
+using DemandForecastingApp.Models; // Import the Models namespace
 
 namespace DemandForecastingApp
 {
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
     public partial class MainWindow : Window
     {
-        private LSTMForecaster? _lstmForecaster;
-        private List<DemandRecord>? _loadedRecords;
-        private List<RossmannSalesRecord>? _rossmannRecords;
-
         public MainWindow()
         {
             InitializeComponent();

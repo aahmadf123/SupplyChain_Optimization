@@ -16,8 +16,8 @@ namespace DemandForecastingApp.Utils
         static Logger()
         {
             // Create the directory if it doesn't exist
-            string directory = Path.GetDirectoryName(LogFilePath);
-            if (!Directory.Exists(directory))
+            string? directory = Path.GetDirectoryName(LogFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -49,7 +49,7 @@ namespace DemandForecastingApp.Utils
             Log("WARNING", message);
         }
         
-        public static void LogError(string message, Exception ex = null)
+        public static void LogError(string message, Exception? ex = null)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(message);
