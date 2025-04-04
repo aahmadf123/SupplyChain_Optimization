@@ -50,17 +50,25 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "CsvHelper": {
+              "target": "Package",
+              "version": "[31.0.0, )"
+            },
+            "Keras.NET": {
+              "target": "Package",
+              "version": "[3.8.5, )"
+            },
             "LiveChartsCore.SkiaSharpView.WPF": {
               "target": "Package",
               "version": "[2.0.0-rc2, )"
             },
             "Microsoft.ML": {
               "target": "Package",
-              "version": "[4.0.2, )"
+              "version": "[3.0.1, )"
             },
             "Microsoft.ML.TimeSeries": {
               "target": "Package",
-              "version": "[4.0.2, )"
+              "version": "[3.0.1, )"
             },
             "NumSharp": {
               "target": "Package",
@@ -69,6 +77,10 @@
             "SciSharp.TensorFlow.Redist": {
               "target": "Package",
               "version": "[2.16.0, )"
+            },
+            "System.Windows.Forms": {
+              "target": "Package",
+              "version": "[4.0.0, )"
             },
             "TensorFlow.NET": {
               "target": "Package",

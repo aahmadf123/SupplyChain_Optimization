@@ -4,39 +4,27 @@ using System.Globalization;
 using System.IO;
 using CsvHelper;
 using CsvHelper.Configuration;
-using DemandForecastingApp.Models;
 
 namespace DemandForecastingApp.Utils
 {
-    public class CsvExporter
+    public static class CsvExporter
     {
-        public bool ExportData<T>(IEnumerable<T> data, string filePath)
+        public static void ExportToCsv<T>(IEnumerable<T> records, string filePath)
         {
             try
             {
-                using (var writer = new StreamWriter(filePath))
-                using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-                {
-                    csv.WriteRecords(data);
-                }
-                Logger.LogInfo($"Successfully exported data to {filePath}");
-                return true;
+                using var writer = new StreamWriter(filePath);
+                using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+                
+                csv.WriteRecords(records);
+                
+                Logger.LogInfo($"Data exported to {filePath}");
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Error exporting CSV to {filePath}", ex);
-                return false;
+                Logger.LogError($"Error exporting data to CSV: {ex.Message}", ex);
+                throw;
             }
-        }
-        
-        public bool ExportForecastData(IEnumerable<ForecastDataPoint> forecastData, string filePath)
-        {
-            return ExportData(forecastData, filePath);
-        }
-        
-        public bool ExportInventoryRecommendations(IEnumerable<InventoryRecommendation> recommendations, string filePath)
-        {
-            return ExportData(recommendations, filePath);
         }
     }
 }

@@ -9,14 +9,11 @@ using DemandForecastingApp.Data;
 using DemandForecastingApp.Models;
 using DemandForecastingApp.Services;
 using DemandForecastingApp.Utils;
-using LiveCharts;
-using LiveCharts.Wpf;
-using Microsoft.Win32;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.Kernel.SkiaSharp;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
+using Microsoft.Win32;
 
 namespace DemandForecastingApp.ViewModels
 {
@@ -28,7 +25,6 @@ namespace DemandForecastingApp.ViewModels
         private LSTMForecaster _lstmForecaster;
         private List<Data.Record> _loadedRecords;
         private List<RossmannSalesRecord> _rossmannRecords;
-        private SeriesCollection _forecastSeries;
         private string _leadTime;
         private string _reorderThreshold;
         private string _statusMessage;
@@ -63,12 +59,6 @@ namespace DemandForecastingApp.ViewModels
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
-        }
-
-        public SeriesCollection ForecastSeries
-        {
-            get => _forecastSeries;
-            set => SetProperty(ref _forecastSeries, value);
         }
 
         public List<string> ChartLabels
@@ -107,8 +97,6 @@ namespace DemandForecastingApp.ViewModels
             set => SetProperty(ref _selectedModelType, value);
         }
 
-        public Func<double, string> YFormatter { get; set; }
-
         public IEnumerable<ISeries> ChartSeries
         {
             get => _chartSeries;
@@ -132,29 +120,8 @@ namespace DemandForecastingApp.ViewModels
             _dataImporter = new DataImporter();
             _rossmannDataImporter = new RossmannDataImporter();
             _marketDataService = new MarketDataService();
-            _forecastSeries = new SeriesCollection();
-            _labels = new List<string>();
-            _forecastPoints = new ObservableCollection<ForecastDataPoint>();
-            _inventoryRecommendations = new ObservableCollection<InventoryRecommendation>();
-            _marketData = new ObservableCollection<MarketIndicator>();
-            _sectorPerformance = new ObservableCollection<StockQuote>();
-            _statusMessage = "Ready";
-            _leadTime = "3";
-            _reorderThreshold = "100";
-            _selectedModelType = "SSA (Default)";
-            _isRossmannDataLoaded = false;
-
-            // Format the chart for dark theme
-            YFormatter = value => value.ToString("N1");
-
-            LoadDataCommand = new RelayCommand(LoadData);
-            RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
-            FetchMarketDataCommand = new RelayCommand(async _ => await FetchMarketDataAsync());
             
-            // Initialize with empty market data
-            Task.Run(async () => await FetchMarketDataAsync());
-
-            // Initialize chart with empty data
+            // Initialize with empty LiveChartsCore series
             _chartSeries = new ISeries[]
             {
                 new LineSeries<double>
@@ -173,9 +140,7 @@ namespace DemandForecastingApp.ViewModels
                 new Axis
                 {
                     Name = "Date",
-                    Labels = new string[] { },
-                    TextSize = 12,
-                    LabelsRotation = 45
+                    Labels = new string[] { }
                 }
             };
             
@@ -183,10 +148,27 @@ namespace DemandForecastingApp.ViewModels
             {
                 new Axis
                 {
-                    Name = "Sales",
-                    TextSize = 12
+                    Name = "Sales"
                 }
             };
+            
+            _labels = new List<string>();
+            _forecastPoints = new ObservableCollection<ForecastDataPoint>();
+            _inventoryRecommendations = new ObservableCollection<InventoryRecommendation>();
+            _marketData = new ObservableCollection<MarketIndicator>();
+            _sectorPerformance = new ObservableCollection<StockQuote>();
+            _statusMessage = "Ready";
+            _leadTime = "3";
+            _reorderThreshold = "100";
+            _selectedModelType = "SSA (Default)";
+            _isRossmannDataLoaded = false;
+
+            LoadDataCommand = new RelayCommand(LoadData);
+            RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
+            FetchMarketDataCommand = new RelayCommand(async _ => await FetchMarketDataAsync());
+            
+            // Initialize with empty market data
+            Task.Run(async () => await FetchMarketDataAsync());
         }
 
         private bool CanRunForecast(object? parameter)
