@@ -912,15 +912,6 @@
           }
         }
       },
-      "System.Windows.Forms/4.0.0": {
-        "type": "package",
-        "compile": {
-          "lib/System.Windows.Forms.dll": {}
-        },
-        "runtime": {
-          "lib/System.Windows.Forms.dll": {}
-        }
-      },
       "TensorFlow.NET/0.150.0": {
         "type": "package",
         "dependencies": {
@@ -2576,18 +2567,6 @@
         "system.threading.tasks.nuspec"
       ]
     },
-    "System.Windows.Forms/4.0.0": {
-      "sha512": "WL3QPG1q88aIWO0JPOlkCeyNE+FK4ufSKY5j6J6qAFQyfCFiiOYxi8RAhev9H0CS/wmKbIK8qr8xZBod85oWKw==",
-      "type": "package",
-      "path": "system.windows.forms/4.0.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/System.Windows.Forms.dll",
-        "system.windows.forms.4.0.0.nupkg.sha512",
-        "system.windows.forms.nuspec"
-      ]
-    },
     "TensorFlow.NET/0.150.0": {
       "sha512": "oWGYeA9btwWKEBGhmD9Y7mlOhdGimjYKFl5WyiYMAHmxlgtvWtfvI1GSV9BI4qzy2rP/AjVhByS/4w0pOJ3ePw==",
       "type": "package",
@@ -2614,7 +2593,6 @@
       "Microsoft.ML.TimeSeries >= 3.0.1",
       "NumSharp >= 0.30.0",
       "SciSharp.TensorFlow.Redist >= 2.16.0",
-      "System.Windows.Forms >= 4.0.0",
       "TensorFlow.NET >= 0.150.0"
     ]
   },
@@ -2696,10 +2674,6 @@
             "target": "Package",
             "version": "[2.16.0, )"
           },
-          "System.Windows.Forms": {
-            "target": "Package",
-            "version": "[4.0.0, )"
-          },
           "TensorFlow.NET": {
             "target": "Package",
             "version": "[0.150.0, )"
@@ -2720,24 +2694,12 @@
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           },
-          "Microsoft.WindowsDesktop.App.WPF": {
+          "Microsoft.WindowsDesktop.App": {
             "privateAssets": "none"
           }
         },
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'System.Windows.Forms 4.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
-      "libraryId": "System.Windows.Forms",
-      "targetGraphs": [
-        "net8.0-windows7.0"
-      ]
-    }
-  ]
+  }
 }

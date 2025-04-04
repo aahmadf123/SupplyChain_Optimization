@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "LnxffFJvGLY=",
+  "dgSpecHash": "q/FLkPwyV+M=",
   "success": true,
   "projectFilePath": "C:\\Users\\firas\\SupplyChainOptimization\\DemandForecastingApp\\DemandForecastingApp.csproj",
   "expectedPackageFiles": [
@@ -55,19 +55,7 @@
     "C:\\Users\\firas\\.nuget\\packages\\system.text.encoding\\4.3.0\\system.text.encoding.4.3.0.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\system.threading.channels\\4.7.1\\system.threading.channels.4.7.1.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\system.threading.tasks\\4.3.0\\system.threading.tasks.4.3.0.nupkg.sha512",
-    "C:\\Users\\firas\\.nuget\\packages\\system.windows.forms\\4.0.0\\system.windows.forms.4.0.0.nupkg.sha512",
     "C:\\Users\\firas\\.nuget\\packages\\tensorflow.net\\0.150.0\\tensorflow.net.0.150.0.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'System.Windows.Forms 4.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
-      "libraryId": "System.Windows.Forms",
-      "targetGraphs": [
-        "net8.0-windows7.0"
-      ]
-    }
-  ]
+  "logs": []
 }

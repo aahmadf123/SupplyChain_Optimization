@@ -5,6 +5,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -24,7 +25,6 @@
     
     <!-- CSV and data handling -->
     <PackageReference Include="CsvHelper" Version="31.0.0" />
-    <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

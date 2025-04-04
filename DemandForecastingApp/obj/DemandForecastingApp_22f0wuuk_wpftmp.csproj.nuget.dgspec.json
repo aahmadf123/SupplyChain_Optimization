@@ -78,6 +78,10 @@
               "target": "Package",
               "version": "[2.16.0, )"
             },
+            "System.Windows.Forms": {
+              "target": "Package",
+              "version": "[4.0.0, )"
+            },
             "TensorFlow.NET": {
               "target": "Package",
               "version": "[0.150.0, )"
@@ -98,7 +102,7 @@
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             },
-            "Microsoft.WindowsDesktop.App": {
+            "Microsoft.WindowsDesktop.App.WPF": {
               "privateAssets": "none"
             }
           },
