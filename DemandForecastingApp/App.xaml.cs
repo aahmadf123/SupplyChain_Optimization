@@ -1,6 +1,6 @@
 ﻿using System.Configuration;
 using System.Data;
-using System.Windows;
+using System.Windows; // Ensure we use WPF’s Application and not WinForms
 
 namespace DemandForecastingApp;
 
