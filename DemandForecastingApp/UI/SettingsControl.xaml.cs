@@ -10,7 +10,7 @@ namespace DemandForecastingApp.UI
     /// <summary>
     /// Interaction logic for SettingsControl.xaml
     /// </summary>
-    public partial class SettingsControl : UserControl
+    public partial class SettingsControl : System.Windows.Controls.UserControl
     {
         private readonly string _settingsFilePath = "settings.xml";
         

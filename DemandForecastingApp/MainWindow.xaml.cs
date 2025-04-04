@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows;
 using DemandForecastingApp.ViewModels;
-using DemandForecastingApp.Models; // Import the Models namespace
+using DemandForecastingApp.Models;  // Added for LSTMForecaster, DemandRecord, RossmannSalesRecord
 
 namespace DemandForecastingApp
 {
