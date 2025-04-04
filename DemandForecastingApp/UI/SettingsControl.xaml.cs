@@ -17,10 +17,6 @@ namespace DemandForecastingApp.UI
         public SettingsControl()
         {
             InitializeComponent();
-            LoadSettings();
-            
-            // Load settings
-            txtApiKey.Text = Utils.AppSettings.GetSetting("AlphaVantageApiKey", "");
         }
 
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
