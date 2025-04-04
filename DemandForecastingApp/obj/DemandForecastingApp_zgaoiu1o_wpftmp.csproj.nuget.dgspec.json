@@ -60,7 +60,7 @@
             },
             "LiveChartsCore.SkiaSharpView.WPF": {
               "target": "Package",
-              "version": "[2.0.0-beta.801, )"
+              "version": "[2.0.0-rc2, )"
             },
             "Microsoft.ML": {
               "target": "Package",
