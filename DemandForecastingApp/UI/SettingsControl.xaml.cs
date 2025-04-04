@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Xml.Serialization;
+using DemandForecastingApp.Utils;
 
 namespace DemandForecastingApp.UI
 {
@@ -17,6 +18,9 @@ namespace DemandForecastingApp.UI
         {
             InitializeComponent();
             LoadSettings();
+            
+            // Load settings
+            txtApiKey.Text = AppSettings.GetSetting("AlphaVantageApiKey", "");
         }
 
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
@@ -53,6 +57,12 @@ namespace DemandForecastingApp.UI
             {
                 MessageBox.Show($"Error saving settings: {ex.Message}");
             }
+            
+            // Save API key
+            AppSettings.SaveSetting("AlphaVantageApiKey", txtApiKey.Text);
+            
+            MessageBox.Show("Settings saved successfully. Changes will take effect the next time you fetch market data.",
+                           "Settings Saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         
         private void LoadSettings()
