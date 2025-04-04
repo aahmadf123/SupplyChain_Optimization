@@ -9,12 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Chart libraries -->
     <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc2" />
-    <PackageReference Include="Microsoft.ML" Version="4.0.2" />
-    <PackageReference Include="Microsoft.ML.TimeSeries" Version="4.0.2" />
+    
+    <!-- Machine Learning libraries -->
+    <PackageReference Include="Microsoft.ML" Version="3.0.1" />
+    <PackageReference Include="Microsoft.ML.TimeSeries" Version="3.0.1" />
+    
+    <!-- TensorFlow and NumSharp -->
     <PackageReference Include="NumSharp" Version="0.30.0" />
     <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />
     <PackageReference Include="TensorFlow.NET" Version="0.150.0" />
+    <PackageReference Include="Keras.NET" Version="3.8.5" />
+    
+    <!-- CSV and data handling -->
+    <PackageReference Include="CsvHelper" Version="31.0.0" />
+    <PackageReference Include="System.Windows.Forms" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

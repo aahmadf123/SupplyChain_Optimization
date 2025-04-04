@@ -4,10 +4,10 @@ using System.Linq;
 using DemandForecastingApp.Utils;
 using NumSharp;
 using Tensorflow;
-using Tensorflow.Keras;
-using Tensorflow.Keras.Engine;
-using Tensorflow.Keras.Layers;
-using Tensorflow.Keras.Optimizers;
+using Keras;
+using Keras.Layers;
+using Keras.Models;
+using Keras.Optimizers;
 using static Tensorflow.Binding;
 
 namespace DemandForecastingApp.Models
@@ -48,7 +48,7 @@ namespace DemandForecastingApp.Models
                 BuildModel();
                 
                 // Train the model
-                _model.fit(
+                _model.Fit(
                     X,
                     y,
                     batch_size: batchSize,
@@ -70,20 +70,20 @@ namespace DemandForecastingApp.Models
             _model = new Sequential();
             
             // Input layer
-            _model.add(new LSTM(50, return_sequences: true, 
+            _model.Add(new LSTM(50, return_sequences: true, 
                 input_shape: new Shape(_timeSteps, _numFeatures)));
             
             // Hidden layers
-            _model.add(new Dropout(0.2f));
-            _model.add(new LSTM(50));
-            _model.add(new Dropout(0.2f));
-            _model.add(new Dense(25, activation: "relu"));
+            _model.Add(new Dropout(0.2f));
+            _model.Add(new LSTM(50));
+            _model.Add(new Dropout(0.2f));
+            _model.Add(new Dense(25, activation: "relu"));
             
             // Output layer
-            _model.add(new Dense(1));
+            _model.Add(new Dense(1));
             
             // Compile the model
-            _model.compile(
+            _model.Compile(
                 optimizer: new Adam(0.001f),
                 loss: "mse",
                 metrics: new[] { "mae" }
@@ -135,8 +135,8 @@ namespace DemandForecastingApp.Models
                 for (int i = 0; i < horizonDays; i++)
                 {
                     // Make prediction
-                    var prediction = _model.predict(X);
-                    var forecastValue = prediction[0][0].numpy().AsScalar<float>();
+                    var prediction = _model.Predict(X);
+                    var forecastValue = (float)prediction[0, 0];
                     
                     // Denormalize the prediction
                     forecastValue = forecastValue * _labelStd + _labelMean;
