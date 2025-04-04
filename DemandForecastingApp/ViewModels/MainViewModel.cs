@@ -9,8 +9,10 @@ using DemandForecastingApp.Data;
 using DemandForecastingApp.Models;
 using DemandForecastingApp.Services;
 using DemandForecastingApp.Utils;
-using LiveCharts;
-using LiveCharts.Wpf;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
 using Microsoft.Win32;
 
 namespace DemandForecastingApp.ViewModels
@@ -23,7 +25,6 @@ namespace DemandForecastingApp.ViewModels
         private LSTMForecaster _lstmForecaster;
         private List<Data.Record> _loadedRecords;
         private List<RossmannSalesRecord> _rossmannRecords;
-        private SeriesCollection _forecastSeries;
         private string _leadTime;
         private string _reorderThreshold;
         private string _statusMessage;
@@ -34,6 +35,9 @@ namespace DemandForecastingApp.ViewModels
         private List<string> _labels;
         private string _selectedModelType;
         private bool _isRossmannDataLoaded;
+        private IEnumerable<ISeries> _chartSeries;
+        private IEnumerable<Axis> _chartXAxes;
+        private IEnumerable<Axis> _chartYAxes;
 
         public ICommand LoadDataCommand { get; }
         public ICommand RunForecastCommand { get; }
@@ -55,12 +59,6 @@ namespace DemandForecastingApp.ViewModels
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
-        }
-
-        public SeriesCollection ForecastSeries
-        {
-            get => _forecastSeries;
-            set => SetProperty(ref _forecastSeries, value);
         }
 
         public List<string> ChartLabels
@@ -99,14 +97,61 @@ namespace DemandForecastingApp.ViewModels
             set => SetProperty(ref _selectedModelType, value);
         }
 
-        public Func<double, string> YFormatter { get; set; }
+        public IEnumerable<ISeries> ChartSeries
+        {
+            get => _chartSeries;
+            set => SetProperty(ref _chartSeries, value);
+        }
+
+        public IEnumerable<Axis> ChartXAxes
+        {
+            get => _chartXAxes;
+            set => SetProperty(ref _chartXAxes, value);
+        }
+
+        public IEnumerable<Axis> ChartYAxes
+        {
+            get => _chartYAxes;
+            set => SetProperty(ref _chartYAxes, value);
+        }
 
         public MainViewModel()
         {
             _dataImporter = new DataImporter();
             _rossmannDataImporter = new RossmannDataImporter();
             _marketDataService = new MarketDataService();
-            _forecastSeries = new SeriesCollection();
+            
+            // Initialize with empty LiveChartsCore series
+            _chartSeries = new ISeries[]
+            {
+                new LineSeries<double>
+                {
+                    Values = new double[] { },
+                    Name = "Forecast",
+                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryFill = new SolidColorPaint(SKColors.White),
+                    GeometrySize = 10
+                }
+            };
+            
+            _chartXAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Date",
+                    Labels = new string[] { }
+                }
+            };
+            
+            _chartYAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Sales"
+                }
+            };
+            
             _labels = new List<string>();
             _forecastPoints = new ObservableCollection<ForecastDataPoint>();
             _inventoryRecommendations = new ObservableCollection<InventoryRecommendation>();
@@ -118,9 +163,6 @@ namespace DemandForecastingApp.ViewModels
             _selectedModelType = "SSA (Default)";
             _isRossmannDataLoaded = false;
 
-            // Format the chart for dark theme
-            YFormatter = value => value.ToString("N1");
-
             LoadDataCommand = new RelayCommand(LoadData);
             RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
             FetchMarketDataCommand = new RelayCommand(async _ => await FetchMarketDataAsync());
@@ -129,49 +171,83 @@ namespace DemandForecastingApp.ViewModels
             Task.Run(async () => await FetchMarketDataAsync());
         }
 
-        private bool CanRunForecast(object parameter)
+        private bool CanRunForecast(object? parameter)
         {
             return !string.IsNullOrEmpty(LeadTime) && !string.IsNullOrEmpty(ReorderThreshold);
         }
 
-        private async void LoadData(object parameter)
+        private async void LoadData(object? parameter)
         {
-            var openFolderDialog = new System.Windows.Forms.FolderBrowserDialog
+            try
             {
-                Description = "Select folder containing Rossmann dataset (train.csv, store.csv, etc.)"
-            };
-
-            if (openFolderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string folderPath = openFolderDialog.SelectedPath;
-                StatusMessage = "Loading Rossmann dataset...";
+                StatusMessage = "Loading Rossmann dataset from Data folder...";
                 
-                try
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
-                    {
-                        // Load Rossmann dataset
-                        _rossmannRecords = _rossmannDataImporter.ImportData(folderPath);
-                        
-                        // Perform feature engineering
-                        _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
-                        
-                        _isRossmannDataLoaded = true;
-                    });
+                    // Load Rossmann dataset directly from the Data folder
+                    _rossmannRecords = _rossmannDataImporter.ImportData();
                     
-                    StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                    // Perform feature engineering
+                    _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
                     
-                    // If LSTM is selected, train model (this can take time)
-                    if (SelectedModelType.Contains("LSTM"))
+                    _isRossmannDataLoaded = true;
+                });
+                
+                StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                
+                // If LSTM is selected, train model (this can take time)
+                if (SelectedModelType.Contains("LSTM"))
+                {
+                    await TrainLSTMModelAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // If automatic loading fails, prompt user to select folder
+                Logger.LogWarning($"Could not automatically load data: {ex.Message}. Prompting for folder selection.");
+                StatusMessage = "Please select the Data folder containing Rossmann dataset...";
+                
+                var openFolderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "Select folder containing Rossmann dataset (train.csv, store.csv, etc.)"
+                };
+
+                if (openFolderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    string folderPath = openFolderDialog.SelectedPath;
+                    StatusMessage = "Loading Rossmann dataset...";
+                    
+                    try
                     {
-                        await TrainLSTMModelAsync();
+                        await Task.Run(() =>
+                        {
+                            // Load Rossmann dataset from selected folder
+                            _rossmannRecords = _rossmannDataImporter.ImportData(folderPath);
+                            
+                            // Perform feature engineering
+                            _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
+                            
+                            _isRossmannDataLoaded = true;
+                        });
+                        
+                        StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                        
+                        // If LSTM is selected, train model (this can take time)
+                        if (SelectedModelType.Contains("LSTM"))
+                        {
+                            await TrainLSTMModelAsync();
+                        }
+                    }
+                    catch (Exception innerEx)
+                    {
+                        Logger.LogError("Error loading Rossmann dataset", innerEx);
+                        MessageBox.Show($"Error loading data: {innerEx.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        StatusMessage = "Error loading data";
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.LogError("Error loading Rossmann dataset", ex);
-                    MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    StatusMessage = "Error loading data";
+                    StatusMessage = "Data loading cancelled";
                 }
             }
         }
@@ -205,7 +281,7 @@ namespace DemandForecastingApp.ViewModels
             }
         }
 
-        private async void RunForecast(object parameter)
+        private async void RunForecast(object? parameter)
         {
             // Validate the input parameters for Lead Time and Reorder Threshold.
             if (!int.TryParse(LeadTime, out int leadTime))
@@ -266,47 +342,8 @@ namespace DemandForecastingApp.ViewModels
                     forecastResults = GenerateDemoForecastData();
                 }
                 
-                // Create chart values from forecast results
-                var forecastValues = new ChartValues<double>();
-                var lowerBoundValues = new ChartValues<double>();
-                var upperBoundValues = new ChartValues<double>();
-                var labels = new List<string>();
-                
-                foreach (var result in forecastResults)
-                {
-                    forecastValues.Add(result.Forecast);
-                    lowerBoundValues.Add(result.LowerBound);
-                    upperBoundValues.Add(result.UpperBound);
-                    labels.Add(result.Date.ToString("MMM dd"));
-                }
-                
-                // Create a new series collection for the chart
-                var seriesCollection = new SeriesCollection
-                {
-                    new LineSeries
-                    {
-                        Title = "Forecast",
-                        Values = forecastValues
-                    },
-                    new LineSeries
-                    {
-                        Title = "Lower Bound",
-                        Values = lowerBoundValues,
-                        Stroke = System.Windows.Media.Brushes.LightBlue,
-                        Fill = System.Windows.Media.Brushes.Transparent
-                    },
-                    new LineSeries
-                    {
-                        Title = "Upper Bound",
-                        Values = upperBoundValues,
-                        Stroke = System.Windows.Media.Brushes.LightBlue,
-                        Fill = System.Windows.Media.Brushes.Transparent
-                    }
-                };
-                
-                // Update the chart
-                ForecastSeries = seriesCollection;
-                ChartLabels = labels;
+                // Update the chart with LiveChartsCore
+                UpdateForecastChart(forecastResults);
                 
                 // Update forecast details and inventory recommendations
                 UpdateForecastDetails(forecastResults, leadTime, reorderThreshold);
@@ -409,7 +446,7 @@ namespace DemandForecastingApp.ViewModels
             InventoryRecommendations = recommendations;
         }
         
-        private async Task FetchMarketDataAsync()
+        private async Task FetchMarketDataAsync(object? parameter = null)
         {
             try
             {
@@ -491,6 +528,62 @@ namespace DemandForecastingApp.ViewModels
             
             // Return a value between -1 and 1
             return Math.Max(-1, Math.Min(1, baseCorrelation + adjustment * 0.2));
+        }
+
+        private void UpdateForecastChart(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults)
+        {
+            var labels = forecastResults.Select(r => r.Date.ToString("MMM dd")).ToArray();
+            
+            var forecastValues = forecastResults.Select(r => (double)r.Forecast).ToArray();
+            var lowerBoundValues = forecastResults.Select(r => (double)r.LowerBound).ToArray();
+            var upperBoundValues = forecastResults.Select(r => (double)r.UpperBound).ToArray();
+            
+            ChartSeries = new ISeries[]
+            {
+                new LineSeries<double>
+                {
+                    Values = forecastValues,
+                    Name = "Forecast",
+                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                    GeometryFill = new SolidColorPaint(SKColors.White),
+                    GeometrySize = 6
+                },
+                new LineSeries<double>
+                {
+                    Values = lowerBoundValues,
+                    Name = "Lower Bound",
+                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
+                    GeometrySize = 0
+                },
+                new LineSeries<double>
+                {
+                    Values = upperBoundValues,
+                    Name = "Upper Bound",
+                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
+                    GeometrySize = 0
+                }
+            };
+            
+            ChartXAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Date",
+                    Labels = labels,
+                    TextSize = 12,
+                    LabelsRotation = 45
+                }
+            };
+            
+            ChartYAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Name = "Sales",
+                    TextSize = 12
+                }
+            };
         }
     }
 }

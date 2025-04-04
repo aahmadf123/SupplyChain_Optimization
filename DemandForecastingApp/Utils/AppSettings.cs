@@ -5,27 +5,27 @@ using System.Text.Json;
 
 namespace DemandForecastingApp.Utils
 {
-    public class AppSettings
+    public static class AppSettings
     {
         private static readonly string SettingsFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SupplyChainOptimization",
             "settings.json");
             
-        private static Dictionary<string, string> _settings;
+        private static Dictionary<string, string>? _settings;
         
         static AppSettings()
         {
             LoadSettings();
         }
         
-        public static string GetSetting(string key, string defaultValue = null)
+        public static string GetSetting(string key, string? defaultValue = null)
         {
-            if (_settings != null && _settings.TryGetValue(key, out string value))
+            if (_settings != null && _settings.TryGetValue(key, out string? value))
             {
                 return value;
             }
-            return defaultValue;
+            return defaultValue ?? string.Empty;
         }
         
         public static void SaveSetting(string key, string value)
@@ -45,7 +45,7 @@ namespace DemandForecastingApp.Utils
             {
                 // Create directory if it doesn't exist
                 var directory = Path.GetDirectoryName(SettingsFilePath);
-                if (!Directory.Exists(directory))
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
@@ -55,7 +55,9 @@ namespace DemandForecastingApp.Utils
                     var json = File.ReadAllText(SettingsFilePath);
                     _settings = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                 }
-                else
+                
+                // If settings is still null, create a new dictionary with defaults
+                if (_settings == null)
                 {
                     _settings = new Dictionary<string, string>();
                     
@@ -77,7 +79,7 @@ namespace DemandForecastingApp.Utils
             try
             {
                 var directory = Path.GetDirectoryName(SettingsFilePath);
-                if (!Directory.Exists(directory))
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Globalization;
 using DemandForecastingApp.Models;
 using DemandForecastingApp.Utils;
+using DemandForecastingApp.Services;
 
 namespace DemandForecastingApp.Data
 {
@@ -26,11 +27,53 @@ namespace DemandForecastingApp.Data
             _storeRecords = new List<RossmannStoreRecord>();
         }
         
+        public List<RossmannSalesRecord> ImportData()
+        {
+            try
+            {
+                Logger.LogInfo("Starting Rossmann data import from Data folder");
+                
+                // Use DataService to get the Data folder path
+                string dataFolderPath = DataService.GetDataFolderPath();
+                
+                Logger.LogInfo($"Using Data folder: {dataFolderPath}");
+                
+                // Verify that all required files exist
+                if (!DataService.VerifyRossmannDataFiles(dataFolderPath))
+                {
+                    throw new FileNotFoundException("One or more required Rossmann data files are missing");
+                }
+                
+                // Import store data first
+                ImportStoreData(Path.Combine(dataFolderPath, STORE_FILE));
+                
+                // Import sales data
+                ImportSalesData(Path.Combine(dataFolderPath, TRAIN_FILE));
+                
+                // Merge data
+                MergeStoreAndSalesData();
+                
+                Logger.LogInfo($"Successfully imported {_salesRecords.Count} sales records and {_storeRecords.Count} store records");
+                return _salesRecords;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error importing Rossmann data", ex);
+                throw;
+            }
+        }
+        
+        // Overload to allow specifying a custom path
         public List<RossmannSalesRecord> ImportData(string dataFolderPath)
         {
             try
             {
-                Logger.LogInfo("Starting Rossmann data import");
+                Logger.LogInfo($"Starting Rossmann data import from: {dataFolderPath}");
+                
+                if (!Directory.Exists(dataFolderPath))
+                {
+                    throw new DirectoryNotFoundException($"Specified data folder not found: {dataFolderPath}");
+                }
                 
                 // Import store data first
                 ImportStoreData(Path.Combine(dataFolderPath, STORE_FILE));
@@ -91,7 +134,7 @@ namespace DemandForecastingApp.Data
                 }
             }
             
-            Logger.LogInfo($"Imported {_storeRecords.Count} store records");
+            Logger.LogInfo($"Imported {_storeRecords.Count} store records from {storeFilePath}");
         }
         
         private void ImportSalesData(string salesFilePath)
@@ -104,8 +147,11 @@ namespace DemandForecastingApp.Data
             _salesRecords.Clear();
             var lines = File.ReadAllLines(salesFilePath);
             
+            // For large files, read only a subset to avoid memory issues
+            const int MAX_RECORDS = 50000;  // Adjust based on your system capabilities
+            
             // Skip header
-            for (int i = 1; i < lines.Length; i++)
+            for (int i = 1; i < lines.Length && (_salesRecords.Count < MAX_RECORDS); i++)
             {
                 var fields = lines[i].Split(',');
                 if (fields.Length < 9) continue; // Skip invalid lines
@@ -132,7 +178,7 @@ namespace DemandForecastingApp.Data
                 }
             }
             
-            Logger.LogInfo($"Imported {_salesRecords.Count} sales records");
+            Logger.LogInfo($"Imported {_salesRecords.Count} sales records from {salesFilePath} (limited to {MAX_RECORDS})");
         }
         
         private void MergeStoreAndSalesData()

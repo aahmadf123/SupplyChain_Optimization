@@ -41,39 +41,26 @@ namespace DemandForecastingApp.Models
         // Convert to vector for ML
         public float[] ToFeatureVector()
         {
+            // Example feature vector - adjust based on your needs
             return new float[]
             {
-                StoreId,
-                Year,
-                Month,
-                Day,
                 DayOfWeek,
+                Month,
                 IsWeekend ? 1 : 0,
-                Open,
                 IsPublicHoliday ? 1 : 0,
                 IsEasterHoliday ? 1 : 0,
                 IsChristmas ? 1 : 0,
-                SchoolHoliday,
-                StoreType == "a" ? 1 : 0,  // One-hot encoding for StoreType
-                StoreType == "b" ? 1 : 0,
-                StoreType == "c" ? 1 : 0,
-                StoreType == "d" ? 1 : 0,
-                Assortment == "a" ? 1 : 0, // One-hot encoding for Assortment
-                Assortment == "b" ? 1 : 0,
-                Assortment == "c" ? 1 : 0,
-                CompetitionDistance.GetValueOrDefault(0),
-                CompetitionOpenMonths,
                 Promo,
-                Promo2,
-                Promo2ActiveMonths,
-                Promo2Active ? 1 : 0
+                SchoolHoliday,
+                Promo2 == 1 ? 1 : 0,
+                CompetitionOpenMonths > 0 ? CompetitionOpenMonths : 0
             };
         }
         
         // Label for ML (what we're trying to predict)
         public float GetLabel()
         {
-            return Sales.GetValueOrDefault(0);
+            return Sales ?? 0f;
         }
     }
 }

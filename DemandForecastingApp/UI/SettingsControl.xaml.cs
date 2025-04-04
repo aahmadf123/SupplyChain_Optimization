@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Xml.Serialization;
 using DemandForecastingApp.Utils;
 
 namespace DemandForecastingApp.UI
@@ -10,98 +9,63 @@ namespace DemandForecastingApp.UI
     /// <summary>
     /// Interaction logic for SettingsControl.xaml
     /// </summary>
-    public partial class SettingsControl : UserControl
+    public partial class SettingsControl : System.Windows.Controls.UserControl
     {
-        private readonly string _settingsFilePath = "settings.xml";
-        
         public SettingsControl()
         {
             InitializeComponent();
             LoadSettings();
-            
-            // Load settings
-            txtApiKey.Text = AppSettings.GetSetting("AlphaVantageApiKey", "");
-        }
-
-        private void SaveSettings_Click(object sender, RoutedEventArgs e)
-        {
-            // Retrieve settings from text boxes.
-            if (!int.TryParse(ForecastHorizonTextBox.Text, out int forecastHorizon))
-            {
-                MessageBox.Show("Please enter a valid number for Forecast Horizon.");
-                return;
-            }
-
-            string mlModelParameter = MLModelParameterTextBox.Text;
-            
-            // Create settings object and save
-            var settings = new AppSettings
-            {
-                ForecastHorizon = forecastHorizon,
-                MLModelParameter = mlModelParameter,
-                LastUpdated = DateTime.Now
-            };
-            
-            try
-            {
-                // Serialize settings to XML
-                var serializer = new XmlSerializer(typeof(AppSettings));
-                using (var writer = new StreamWriter(_settingsFilePath))
-                {
-                    serializer.Serialize(writer, settings);
-                }
-                
-                MessageBox.Show($"Settings Saved:\nForecast Horizon: {forecastHorizon}\nML Model Parameter: {mlModelParameter}");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error saving settings: {ex.Message}");
-            }
-            
-            // Save API key
-            AppSettings.SaveSetting("AlphaVantageApiKey", txtApiKey.Text);
-            
-            MessageBox.Show("Settings saved successfully. Changes will take effect the next time you fetch market data.",
-                           "Settings Saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         
         private void LoadSettings()
         {
             try
             {
-                if (File.Exists(_settingsFilePath))
-                {
-                    var serializer = new XmlSerializer(typeof(AppSettings));
-                    using (var reader = new StreamReader(_settingsFilePath))
-                    {
-                        var settings = (AppSettings)serializer.Deserialize(reader);
-                        ForecastHorizonTextBox.Text = settings.ForecastHorizon.ToString();
-                        MLModelParameterTextBox.Text = settings.MLModelParameter;
-                    }
-                }
-                else
-                {
-                    // Set defaults
-                    ForecastHorizonTextBox.Text = "12";
-                    MLModelParameterTextBox.Text = "Default";
-                }
+                // Load API key from AppSettings
+                txtApiKey.Text = AppSettings.GetSetting("AlphaVantageApiKey", "APFCJIALTDC7YYUT");
+                
+                // Load forecast horizon
+                ForecastHorizonTextBox.Text = AppSettings.GetSetting("ForecastHorizon", "12");
+                
+                // Load ML model parameter
+                MLModelParameterTextBox.Text = AppSettings.GetSetting("MLModelParameter", "Default");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading settings: {ex.Message}");
+                
                 // Set defaults if loading fails
+                txtApiKey.Text = "APFCJIALTDC7YYUT";
                 ForecastHorizonTextBox.Text = "12";
                 MLModelParameterTextBox.Text = "Default";
             }
         }
-    }
-    
-    // Settings class for serialization
-    [Serializable]
-    public class AppSettings
-    {
-        public int ForecastHorizon { get; set; }
-        public string MLModelParameter { get; set; }
-        public DateTime LastUpdated { get; set; }
+        
+        private void SaveSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate forecast horizon
+                if (!int.TryParse(ForecastHorizonTextBox.Text, out int forecastHorizon))
+                {
+                    MessageBox.Show("Please enter a valid number for Forecast Horizon.");
+                    return;
+                }
+                
+                string mlModelParameter = MLModelParameterTextBox.Text;
+                
+                // Save settings to AppSettings
+                AppSettings.SaveSetting("ForecastHorizon", forecastHorizon.ToString());
+                AppSettings.SaveSetting("MLModelParameter", mlModelParameter);
+                AppSettings.SaveSetting("AlphaVantageApiKey", txtApiKey.Text);
+                
+                MessageBox.Show("Settings saved successfully. Changes will take effect the next time you fetch market data.",
+                               "Settings Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}");
+            }
+        }
     }
 }

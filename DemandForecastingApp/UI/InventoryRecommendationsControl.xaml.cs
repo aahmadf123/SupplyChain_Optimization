@@ -1,30 +1,15 @@
-using System.Collections.ObjectModel;
 using System.Windows.Controls;
-using DemandForecastingApp.Models;
 
 namespace DemandForecastingApp.UI
 {
     /// <summary>
     /// Interaction logic for InventoryRecommendationsControl.xaml
     /// </summary>
-    public partial class InventoryRecommendationsControl : UserControl
+    public partial class InventoryRecommendationsControl : System.Windows.Controls.UserControl
     {
-        private ObservableCollection<InventoryRecommendation> _recommendations;
-        
         public InventoryRecommendationsControl()
         {
             InitializeComponent();
-            _recommendations = new ObservableCollection<InventoryRecommendation>();
-            RecommendationsListView.ItemsSource = _recommendations;
-        }
-        
-        public void UpdateRecommendations(ObservableCollection<InventoryRecommendation> newRecommendations)
-        {
-            _recommendations.Clear();
-            foreach (var item in newRecommendations)
-            {
-                _recommendations.Add(item);
-            }
         }
     }
 }

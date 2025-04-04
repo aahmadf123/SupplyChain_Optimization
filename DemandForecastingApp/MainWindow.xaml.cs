@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using DemandForecastingApp.ViewModels;
+using DemandForecastingApp.Models;  // Added for LSTMForecaster, DemandRecord, RossmannSalesRecord
 
 namespace DemandForecastingApp
 {
