@@ -136,42 +136,76 @@ namespace DemandForecastingApp.ViewModels
 
         private async void LoadData(object parameter)
         {
-            var openFolderDialog = new System.Windows.Forms.FolderBrowserDialog
+            try
             {
-                Description = "Select folder containing Rossmann dataset (train.csv, store.csv, etc.)"
-            };
-
-            if (openFolderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                string folderPath = openFolderDialog.SelectedPath;
-                StatusMessage = "Loading Rossmann dataset...";
+                StatusMessage = "Loading Rossmann dataset from Data folder...";
                 
-                try
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
-                    {
-                        // Load Rossmann dataset
-                        _rossmannRecords = _rossmannDataImporter.ImportData(folderPath);
-                        
-                        // Perform feature engineering
-                        _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
-                        
-                        _isRossmannDataLoaded = true;
-                    });
+                    // Load Rossmann dataset directly from the Data folder
+                    _rossmannRecords = _rossmannDataImporter.ImportData();
                     
-                    StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                    // Perform feature engineering
+                    _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
                     
-                    // If LSTM is selected, train model (this can take time)
-                    if (SelectedModelType.Contains("LSTM"))
+                    _isRossmannDataLoaded = true;
+                });
+                
+                StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                
+                // If LSTM is selected, train model (this can take time)
+                if (SelectedModelType.Contains("LSTM"))
+                {
+                    await TrainLSTMModelAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // If automatic loading fails, prompt user to select folder
+                Logger.LogWarning($"Could not automatically load data: {ex.Message}. Prompting for folder selection.");
+                StatusMessage = "Please select the Data folder containing Rossmann dataset...";
+                
+                var openFolderDialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "Select folder containing Rossmann dataset (train.csv, store.csv, etc.)"
+                };
+
+                if (openFolderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    string folderPath = openFolderDialog.SelectedPath;
+                    StatusMessage = "Loading Rossmann dataset...";
+                    
+                    try
                     {
-                        await TrainLSTMModelAsync();
+                        await Task.Run(() =>
+                        {
+                            // Load Rossmann dataset from selected folder
+                            _rossmannRecords = _rossmannDataImporter.ImportData(folderPath);
+                            
+                            // Perform feature engineering
+                            _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
+                            
+                            _isRossmannDataLoaded = true;
+                        });
+                        
+                        StatusMessage = $"Loaded {_rossmannRecords.Count} Rossmann sales records";
+                        
+                        // If LSTM is selected, train model (this can take time)
+                        if (SelectedModelType.Contains("LSTM"))
+                        {
+                            await TrainLSTMModelAsync();
+                        }
+                    }
+                    catch (Exception innerEx)
+                    {
+                        Logger.LogError("Error loading Rossmann dataset", innerEx);
+                        MessageBox.Show($"Error loading data: {innerEx.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        StatusMessage = "Error loading data";
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.LogError("Error loading Rossmann dataset", ex);
-                    MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    StatusMessage = "Error loading data";
+                    StatusMessage = "Data loading cancelled";
                 }
             }
         }

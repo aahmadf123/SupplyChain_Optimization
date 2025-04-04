@@ -6,15 +6,36 @@ namespace DemandForecastingApp.Utils
 {
     public static class Logger
     {
-        private static readonly string LogFilePath = "application.log";
+        private static readonly string LogFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SupplyChainOptimization",
+            "app.log");
+            
+        private static readonly object FileLock = new object();
         
         static Logger()
         {
-            // Create log directory if it doesn't exist
-            var directory = Path.GetDirectoryName(LogFilePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            // Create the directory if it doesn't exist
+            string directory = Path.GetDirectoryName(LogFilePath);
+            if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
+            }
+            
+            // Initialize log file with a header
+            if (!File.Exists(LogFilePath))
+            {
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter(LogFilePath, false))
+                    {
+                        writer.WriteLine("===== Application Log Started at {0} =====", DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to initialize log file: " + ex.Message);
+                }
             }
         }
         
@@ -23,37 +44,58 @@ namespace DemandForecastingApp.Utils
             Log("INFO", message);
         }
         
-        public static void LogError(string message, Exception ex = null)
-        {
-            string errorMessage = ex != null ? $"{message} - Exception: {ex.Message}" : message;
-            Log("ERROR", errorMessage);
-            
-            if (ex != null)
-            {
-                Log("ERROR", $"Stack Trace: {ex.StackTrace}");
-            }
-        }
-        
         public static void LogWarning(string message)
         {
             Log("WARNING", message);
+        }
+        
+        public static void LogError(string message, Exception ex = null)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(message);
+            
+            if (ex != null)
+            {
+                sb.AppendLine();
+                sb.Append("Exception: ").Append(ex.GetType().Name).Append(": ").Append(ex.Message);
+                sb.AppendLine();
+                sb.Append("StackTrace: ").Append(ex.StackTrace);
+                
+                if (ex.InnerException != null)
+                {
+                    sb.AppendLine();
+                    sb.Append("InnerException: ").Append(ex.InnerException.GetType().Name)
+                      .Append(": ").Append(ex.InnerException.Message);
+                }
+            }
+            
+            Log("ERROR", sb.ToString());
         }
         
         private static void Log(string level, string message)
         {
             try
             {
-                string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{level}] {message}";
-                
-                // Append to log file
-                using (StreamWriter writer = new StreamWriter(LogFilePath, true, Encoding.UTF8))
+                lock (FileLock)
                 {
-                    writer.WriteLine(logEntry);
+                    using (StreamWriter writer = new StreamWriter(LogFilePath, true))
+                    {
+                        writer.WriteLine("[{0}] {1}: {2}", 
+                            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                            level,
+                            message);
+                    }
                 }
+                
+                // Also write to console for debugging
+                Console.WriteLine("[{0}] {1}: {2}", 
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                    level,
+                    message);
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail if logging itself fails
+                Console.WriteLine("Failed to write to log file: " + ex.Message);
             }
         }
     }
