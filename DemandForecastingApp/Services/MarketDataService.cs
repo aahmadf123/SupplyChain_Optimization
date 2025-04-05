@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 using DemandForecastingApp.Models;
 using DemandForecastingApp.Utils;
 
@@ -11,47 +11,54 @@ namespace DemandForecastingApp.Services
     public class MarketDataService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey;
         private const string ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
         
         public MarketDataService()
         {
             _httpClient = new HttpClient();
-            _apiKey = AppSettings.GetSetting("AlphaVantageApiKey", "APFCJIALTDC7YYUT");
+            _httpClient.Timeout = TimeSpan.FromSeconds(10); // Set timeout to 10 seconds
         }
         
-        public async Task<List<MarketIndicator>> GetMarketIndicatorsAsync()
+        public List<MarketIndicator> GetMarketIndicators(string apiKey)
         {
             try
             {
                 var indicators = new List<MarketIndicator>();
                 
-                // Get real market indicators using Alpha Vantage API
-                await GetGlobalMarketStatus(indicators);
-                await GetEconomicIndicator(indicators, "REAL_GDP", "Real GDP");
-                await GetEconomicIndicator(indicators, "CPI", "Consumer Price Index");
-                await GetEconomicIndicator(indicators, "RETAIL_SALES", "Retail Sales");
-                await GetEconomicIndicator(indicators, "UNEMPLOYMENT", "Unemployment Rate");
+                // Make synchronous calls for simplicity in demo
+                GetGlobalMarketStatus(indicators, apiKey).Wait();
+                GetEconomicIndicator(indicators, "GDP", "US GDP Annual Growth Rate", apiKey).Wait();
+                GetEconomicIndicator(indicators, "INFLATION", "US Inflation Rate", apiKey).Wait();
                 
                 return indicators;
             }
             catch (Exception ex)
             {
-                Logger.LogError("Error fetching market indicators", ex);
-                
-                // Fallback to mock data in case of API failure
-                var fallbackIndicators = new List<MarketIndicator>();
-                AddMockMarketData(fallbackIndicators);
-                return fallbackIndicators;
+                Logger.LogError("Error getting market indicators", ex);
+                return GenerateDemoMarketData();
+            }
+        }
+
+        public List<StockQuote> GetSectorPerformance(string apiKey)
+        {
+            try
+            {
+                var sectors = GetSectorPerformanceAsync(apiKey).Result;
+                return sectors;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error getting sector performance", ex);
+                return GenerateDemoSectorData();
             }
         }
         
-        private async Task GetGlobalMarketStatus(List<MarketIndicator> indicators)
+        private async Task GetGlobalMarketStatus(List<MarketIndicator> indicators, string apiKey)
         {
             try
             {
                 // Get global market status (S&P 500)
-                string url = $"{ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=SPY&apikey={_apiKey}";
+                string url = $"{ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=SPY&apikey={apiKey}";
                 var response = await _httpClient.GetStringAsync(url);
                 
                 // Parse JSON response
@@ -84,218 +91,126 @@ namespace DemandForecastingApp.Services
             catch (Exception ex)
             {
                 Logger.LogWarning($"Error fetching global market status: {ex.Message}");
-                // Add fallback data
                 indicators.Add(new MarketIndicator
                 {
                     Key = "S&P 500 ETF",
-                    Value = "420.75",
-                    Change = "+0.5%",
+                    Value = "4,238.45",
+                    Change = "+1.2%",
                     Impact = "Positive"
                 });
             }
         }
         
-        private async Task GetEconomicIndicator(List<MarketIndicator> indicators, string indicator, string displayName)
+        private async Task GetEconomicIndicator(List<MarketIndicator> indicators, string indicator, string displayName, string apiKey)
         {
             try
             {
-                string url = $"{ALPHA_VANTAGE_BASE_URL}?function={indicator}&interval=annual&apikey={_apiKey}";
-                var response = await _httpClient.GetStringAsync(url);
+                // Note: This is a simplified implementation. In a real app, you would use the Alpha Vantage API
+                // to get actual economic indicators.
+                await Task.Delay(100); // Simulate API call
                 
-                // Parse JSON response
-                using (JsonDocument doc = JsonDocument.Parse(response))
+                if (indicator == "GDP")
                 {
-                    var root = doc.RootElement;
-                    if (root.TryGetProperty("data", out var data) && data.GetArrayLength() >= 2)
+                    indicators.Add(new MarketIndicator
                     {
-                        var latest = data[0];
-                        var previous = data[1];
-                        
-                        string latestDate = latest.TryGetProperty("date", out var date) ? date.GetString() ?? "" : "";
-                        string latestValue = latest.TryGetProperty("value", out var val) ? val.GetString() ?? "N/A" : "N/A";
-                        string previousValue = previous.TryGetProperty("value", out var prevVal) ? prevVal.GetString() ?? "N/A" : "N/A";
-                        
-                        double change = 0;
-                        double changePercent = 0;
-                        if (double.TryParse(latestValue, out double latestVal) && 
-                            double.TryParse(previousValue, out double prevValDouble) && 
-                            prevValDouble != 0)
-                        {
-                            change = latestVal - prevValDouble;
-                            changePercent = (change / prevValDouble) * 100;
-                        }
-                        
-                        string impact = "Neutral";
-                        // Customize impact logic based on the indicator
-                        switch (indicator)
-                        {
-                            case "REAL_GDP":
-                            case "RETAIL_SALES":
-                                impact = changePercent >= 0 ? "Positive" : "Negative";
-                                break;
-                            case "CPI":
-                            case "UNEMPLOYMENT":
-                                impact = changePercent <= 0 ? "Positive" : "Negative";
-                                break;
-                        }
-                        
-                        indicators.Add(new MarketIndicator
-                        {
-                            Key = displayName,
-                            Value = latestValue ?? "N/A",
-                            Change = $"{changePercent:+0.00;-0.00;0.00}%",
-                            Impact = impact
-                        });
-                    }
+                        Key = displayName,
+                        Value = "2.1%",
+                        Change = "+0.2%",
+                        Impact = "Positive"
+                    });
+                }
+                else if (indicator == "INFLATION")
+                {
+                    indicators.Add(new MarketIndicator
+                    {
+                        Key = displayName,
+                        Value = "3.4%",
+                        Change = "-0.1%",
+                        Impact = "Positive"
+                    });
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogWarning($"Error fetching {displayName}: {ex.Message}");
-                // Add fallback data
-                AddMockIndicator(indicators, displayName);
+                Logger.LogWarning($"Error fetching economic indicator '{indicator}': {ex.Message}");
+                indicators.Add(new MarketIndicator
+                {
+                    Key = displayName,
+                    Value = "N/A",
+                    Change = "0%",
+                    Impact = "Neutral"
+                });
             }
         }
         
-        public async Task<List<StockQuote>> GetSectorPerformanceAsync()
+        private async Task<List<StockQuote>> GetSectorPerformanceAsync(string apiKey)
         {
             try
             {
-                string url = $"{ALPHA_VANTAGE_BASE_URL}?function=SECTOR&apikey={_apiKey}";
+                // Note: This is a simplified implementation. In a real app, you would use the Alpha Vantage API
+                // to get sector performance data.
+                string url = $"{ALPHA_VANTAGE_BASE_URL}?function=SECTOR&apikey={apiKey}";
                 var response = await _httpClient.GetStringAsync(url);
-                var quotes = new List<StockQuote>();
                 
-                // Parse JSON response
+                var sectors = new List<StockQuote>();
+                
                 using (JsonDocument doc = JsonDocument.Parse(response))
                 {
                     var root = doc.RootElement;
                     
-                    // Process the "Rank A: Real-Time Performance" section
-                    if (root.TryGetProperty("Rank A: Real-Time Performance", out var realtimePerf))
+                    if (root.TryGetProperty("Rank A: Real-Time Performance", out var realTime))
                     {
-                        foreach (var property in realtimePerf.EnumerateObject())
+                        foreach (var property in realTime.EnumerateObject())
                         {
-                            var sectorName = property.Name;
-                            var performance = property.Value.GetString() ?? "N/A";
-                            
-                            quotes.Add(new StockQuote
+                            if (property.Name != "Meta Data")
                             {
-                                Symbol = sectorName,
-                                Price = "N/A", // Not available in sector performance
-                                Change = performance ?? "N/A"
-                            });
+                                sectors.Add(new StockQuote
+                                {
+                                    Symbol = property.Name,
+                                    Price = 0, // Alpha Vantage doesn't provide actual prices for sectors
+                                    Change = property.Value.GetString() ?? "0%"
+                                });
+                            }
                         }
                     }
                 }
                 
-                return quotes;
+                return sectors;
             }
             catch (Exception ex)
             {
-                Logger.LogError("Error fetching sector performance", ex);
-                return new List<StockQuote>(); // Return empty list on error
+                Logger.LogWarning($"Error fetching sector performance: {ex.Message}");
+                return GenerateDemoSectorData();
             }
         }
-        
-        // Method to get weather data for a specific location using OpenWeatherMap API
-        // (You would need an API key for OpenWeatherMap to make this work)
-        public async Task<WeatherData> GetWeatherDataAsync(string location)
+
+        private List<MarketIndicator> GenerateDemoMarketData()
         {
-            try
+            return new List<MarketIndicator>
             {
-                // For now, return mock data as we don't have OpenWeatherMap API key
-                await Task.Delay(300);
-                
-                var random = new Random();
-                
-                return new WeatherData
-                {
-                    Location = location,
-                    Temperature = (float)(10 + random.NextDouble() * 20),
-                    Condition = GetRandomWeatherCondition(random),
-                    Precipitation = (float)(random.NextDouble() * 10)
-                };
-            }
-            catch (Exception ex)
+                new MarketIndicator { Key = "S&P 500", Value = "4,238.45", Change = "+1.2%", Impact = "Positive" },
+                new MarketIndicator { Key = "Crude Oil", Value = "$72.85", Change = "-0.8%", Impact = "Negative" },
+                new MarketIndicator { Key = "10-Year Treasury", Value = "1.89%", Change = "+0.05%", Impact = "Negative" },
+                new MarketIndicator { Key = "US GDP Annual Growth Rate", Value = "2.1%", Change = "+0.2%", Impact = "Positive" },
+                new MarketIndicator { Key = "US Inflation Rate", Value = "3.4%", Change = "-0.1%", Impact = "Positive" },
+                new MarketIndicator { Key = "USD Index", Value = "96.54", Change = "-0.2%", Impact = "Positive" }
+            };
+        }
+
+        private List<StockQuote> GenerateDemoSectorData()
+        {
+            return new List<StockQuote>
             {
-                Logger.LogError($"Error fetching weather data for {location}", ex);
-                throw;
-            }
-        }
-        
-        private void AddMockMarketData(List<MarketIndicator> indicators)
-        {
-            // Add mock data for when API fails
-            AddMockIndicator(indicators, "Consumer Price Index");
-            AddMockIndicator(indicators, "Retail Sales Growth");
-            AddMockIndicator(indicators, "Real GDP");
-            AddMockIndicator(indicators, "Consumer Confidence");
-            AddMockIndicator(indicators, "Unemployment Rate");
-        }
-        
-        private void AddMockIndicator(List<MarketIndicator> indicators, string name)
-        {
-            var random = new Random();
-            bool isPositive = random.NextDouble() > 0.5;
-            
-            switch (name)
-            {
-                case "Consumer Price Index":
-                    indicators.Add(new MarketIndicator
-                    {
-                        Key = name,
-                        Value = $"{100 + random.NextDouble() * 10:F2}",
-                        Change = $"{(random.NextDouble() * 2 - 1):+0.00;-0.00;0.00}%",
-                        Impact = isPositive ? "Positive" : "Negative"
-                    });
-                    break;
-                    
-                case "Retail Sales Growth":
-                    indicators.Add(new MarketIndicator
-                    {
-                        Key = name,
-                        Value = $"{(random.NextDouble() * 5):F2}%",
-                        Change = $"{(random.NextDouble() * 2 - 1):+0.00;-0.00;0.00}%",
-                        Impact = isPositive ? "Positive" : "Negative"
-                    });
-                    break;
-                    
-                case "Real GDP":
-                    indicators.Add(new MarketIndicator
-                    {
-                        Key = name,
-                        Value = $"{(random.NextDouble() * 4 - 1):F1}%",
-                        Change = $"{(random.NextDouble() * 1 - 0.5):+0.00;-0.00;0.00}%",
-                        Impact = isPositive ? "Positive" : "Negative"
-                    });
-                    break;
-                    
-                case "Consumer Confidence":
-                    indicators.Add(new MarketIndicator
-                    {
-                        Key = name,
-                        Value = $"{70 + random.NextDouble() * 30:F1}",
-                        Change = $"{(random.NextDouble() * 4 - 2):+0.00;-0.00;0.00}",
-                        Impact = isPositive ? "Positive" : "Negative"
-                    });
-                    break;
-                    
-                case "Unemployment Rate":
-                    indicators.Add(new MarketIndicator
-                    {
-                        Key = name,
-                        Value = $"{3 + random.NextDouble() * 7:F1}%",
-                        Change = $"{(random.NextDouble() * 1 - 0.5):+0.00;-0.00;0.00}%",
-                        Impact = random.NextDouble() < 0.7 ? "Negative" : "Positive" // Lower is better for unemployment
-                    });
-                    break;
-            }
-        }
-        
-        private string GetRandomWeatherCondition(Random random)
-        {
-            string[] conditions = { "Sunny", "Cloudy", "Rainy", "Snowy", "Partially Cloudy" };
-            return conditions[random.Next(conditions.Length)];
+                new StockQuote { Symbol = "Consumer Staples", Price = 78.42m, Change = "+1.2%" },
+                new StockQuote { Symbol = "Technology", Price = 156.78m, Change = "+2.3%" },
+                new StockQuote { Symbol = "Healthcare", Price = 112.34m, Change = "+0.8%" },
+                new StockQuote { Symbol = "Energy", Price = 65.21m, Change = "-1.5%" },
+                new StockQuote { Symbol = "Financials", Price = 92.67m, Change = "+0.5%" },
+                new StockQuote { Symbol = "Industrials", Price = 104.89m, Change = "-0.3%" },
+                new StockQuote { Symbol = "Materials", Price = 85.34m, Change = "+0.7%" },
+                new StockQuote { Symbol = "Utilities", Price = 68.92m, Change = "-0.2%" },
+                new StockQuote { Symbol = "Real Estate", Price = 42.56m, Change = "+1.1%" }
+            };
         }
     }
 }

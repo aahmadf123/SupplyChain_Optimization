@@ -5,35 +5,36 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using DemandForecastingApp.Data;
-using DemandForecastingApp.Models;
-using DemandForecastingApp.Services;
-using DemandForecastingApp.Utils;
+using System.IO;
+using System.Windows.Forms;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
-using Microsoft.Win32;
+using DemandForecastingApp.Data;
+using DemandForecastingApp.Models;
+using DemandForecastingApp.Services;
+using DemandForecastingApp.Utils;
 using MessageBox = System.Windows.MessageBox;
+
 namespace DemandForecastingApp.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
         private readonly DataImporter _dataImporter;
-        private RossmannDataImporter _rossmannDataImporter;
-        private MarketDataService _marketDataService;
-        private LSTMForecaster? _lstmForecaster;
-        // Removing unused field _loadedRecords
-        private List<RossmannSalesRecord>? _rossmannRecords;
-        private string _leadTime;
-        private string _reorderThreshold;
-        private string _statusMessage;
+        private readonly RossmannDataImporter _rossmannDataImporter;
+        private readonly MarketDataService _marketDataService;
+        private LSTMForecaster _lstmForecaster;
+        private List<RossmannSalesRecord> _rossmannRecords;
+        private string _leadTime = "5";
+        private string _reorderThreshold = "20";
+        private string _statusMessage = "Ready to load data";
         private ObservableCollection<ForecastDataPoint> _forecastPoints;
         private ObservableCollection<InventoryRecommendation> _inventoryRecommendations;
         private ObservableCollection<MarketIndicator> _marketData;
         private ObservableCollection<StockQuote> _sectorPerformance;
         private List<string> _labels;
-        private string _selectedModelType;
+        private string _selectedModelType = "SSA (Default)";
         private bool _isRossmannDataLoaded;
         private IEnumerable<ISeries> _chartSeries;
         private IEnumerable<Axis> _chartXAxes;
@@ -78,7 +79,7 @@ namespace DemandForecastingApp.ViewModels
             get => _inventoryRecommendations;
             set => SetProperty(ref _inventoryRecommendations, value);
         }
-        
+
         public ObservableCollection<MarketIndicator> MarketData
         {
             get => _marketData;
@@ -120,6 +121,11 @@ namespace DemandForecastingApp.ViewModels
             _dataImporter = new DataImporter { ProductId = "DefaultProduct" };
             _rossmannDataImporter = new RossmannDataImporter();
             _marketDataService = new MarketDataService();
+            _forecastPoints = new ObservableCollection<ForecastDataPoint>();
+            _inventoryRecommendations = new ObservableCollection<InventoryRecommendation>();
+            _marketData = new ObservableCollection<MarketIndicator>();
+            _sectorPerformance = new ObservableCollection<StockQuote>();
+            _labels = new List<string>();
             
             // Initialize with empty LiveChartsCore series
             _chartSeries = new ISeries[]
@@ -152,50 +158,42 @@ namespace DemandForecastingApp.ViewModels
                 }
             };
             
-            _labels = new List<string>();
-            _forecastPoints = new ObservableCollection<ForecastDataPoint>();
-            _inventoryRecommendations = new ObservableCollection<InventoryRecommendation>();
-            _marketData = new ObservableCollection<MarketIndicator>();
-            _sectorPerformance = new ObservableCollection<StockQuote>();
-            _statusMessage = "Ready";
-            _leadTime = "3";
-            _reorderThreshold = "100";
-            _selectedModelType = "SSA (Default)";
-            _isRossmannDataLoaded = false;
-
-            LoadDataCommand = new RelayCommand(LoadData);
+            // Initialize commands
+            LoadDataCommand = new RelayCommand(LoadData, param => true);
             RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
-            FetchMarketDataCommand = new RelayCommand(async _ => await FetchMarketDataAsync());
-            
-            // Initialize with empty market data
-            Task.Run(async () => await FetchMarketDataAsync());
+            FetchMarketDataCommand = new RelayCommand(async _ => await FetchMarketDataAsync(), param => true);
         }
 
-        private bool CanRunForecast(object? parameter)
+        private bool CanRunForecast(object parameter)
         {
             return !string.IsNullOrEmpty(LeadTime) && !string.IsNullOrEmpty(ReorderThreshold);
         }
 
-        private async void LoadData(object? parameter)
+        private async void LoadData(object parameter)
         {
             try
             {
+                string dataFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
                 StatusMessage = "Loading Rossmann dataset from Data folder...";
                 
                 await Task.Run(() =>
                 {
-                    // Load Rossmann dataset directly from the Data folder
-                    _rossmannRecords = _rossmannDataImporter.ImportData();
-                    
-                    // Perform feature engineering
-                    _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
-                    
-                    _isRossmannDataLoaded = true;
+                    try
+                    {
+                        _rossmannRecords = _rossmannDataImporter.ImportData(dataFolderPath);
+                        _rossmannDataImporter.FeatureEngineering();
+                        _isRossmannDataLoaded = true;
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        // Data folder not found, will prompt user
+                        _isRossmannDataLoaded = false;
+                        throw;
+                    }
                 });
                 
                 StatusMessage = $"Loaded {_rossmannRecords?.Count ?? 0} Rossmann sales records";
                 
-                // If LSTM is selected, train model (this can take time)
                 if (SelectedModelType.Contains("LSTM"))
                 {
                     await TrainLSTMModelAsync();
@@ -203,16 +201,15 @@ namespace DemandForecastingApp.ViewModels
             }
             catch (Exception ex)
             {
-                // If automatic loading fails, prompt user to select folder
                 Logger.LogWarning($"Could not automatically load data: {ex.Message}. Prompting for folder selection.");
                 StatusMessage = "Please select the Data folder containing Rossmann dataset...";
                 
-                var openFolderDialog = new System.Windows.Forms.FolderBrowserDialog
+                var openFolderDialog = new FolderBrowserDialog
                 {
                     Description = "Select folder containing Rossmann dataset (train.csv, store.csv, etc.)"
                 };
 
-                if (openFolderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                if (openFolderDialog.ShowDialog() == DialogResult.OK)
                 {
                     string folderPath = openFolderDialog.SelectedPath;
                     StatusMessage = "Loading Rossmann dataset...";
@@ -221,18 +218,13 @@ namespace DemandForecastingApp.ViewModels
                     {
                         await Task.Run(() =>
                         {
-                            // Load Rossmann dataset from selected folder
                             _rossmannRecords = _rossmannDataImporter.ImportData(folderPath);
-                            
-                            // Perform feature engineering
-                            _rossmannRecords = _rossmannDataImporter.FeatureEngineering(_rossmannRecords);
-                            
+                            _rossmannDataImporter.FeatureEngineering();
                             _isRossmannDataLoaded = true;
                         });
                         
                         StatusMessage = $"Loaded {_rossmannRecords?.Count ?? 0} Rossmann sales records";
                         
-                        // If LSTM is selected, train model (this can take time)
                         if (SelectedModelType.Contains("LSTM"))
                         {
                             await TrainLSTMModelAsync();
@@ -281,7 +273,7 @@ namespace DemandForecastingApp.ViewModels
             }
         }
 
-        private async void RunForecast(object? parameter)
+        private async void RunForecast(object parameter)
         {
             // Validate the input parameters for Lead Time and Reorder Threshold.
             if (!int.TryParse(LeadTime, out int leadTime))
@@ -298,7 +290,7 @@ namespace DemandForecastingApp.ViewModels
             try
             {
                 List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults;
-                
+
                 if (_isRossmannDataLoaded)
                 {
                     // Use Rossmann data with selected model
@@ -308,7 +300,7 @@ namespace DemandForecastingApp.ViewModels
                         {
                             await TrainLSTMModelAsync();
                         }
-                        
+
                         // Use LSTM forecaster
                         StatusMessage = "Running LSTM forecast...";
                         forecastResults = await Task.Run(() => _lstmForecaster?.PredictSales(
@@ -320,7 +312,7 @@ namespace DemandForecastingApp.ViewModels
                     {
                         // Use SSA forecaster with Rossmann data
                         StatusMessage = "Running SSA forecast on Rossmann data...";
-                        
+
                         // Convert Rossmann records to DemandRecord format
                         var demandRecords = _rossmannRecords?
                             .Where(r => r.Sales.HasValue)
@@ -332,7 +324,7 @@ namespace DemandForecastingApp.ViewModels
                                 StateHoliday = r.StateHoliday ?? "0"  // Default to "0" if null, matching Rossmann dataset format
                             })
                             .ToList();
-                        
+
                         var ssaForecaster = new ForecastModel();
                         forecastResults = ssaForecaster.PredictDemand(demandRecords, 10);
                     }
@@ -342,126 +334,287 @@ namespace DemandForecastingApp.ViewModels
                     // Use demo data if no Rossmann data is loaded
                     forecastResults = GenerateDemoForecastData();
                 }
-                
+
                 // Update the chart with LiveChartsCore
                 UpdateForecastChart(forecastResults);
-                
+
                 // Update forecast details and inventory recommendations
                 UpdateForecastDetails(forecastResults, leadTime, reorderThreshold);
-                
+
                 // Update market data
                 await FetchMarketDataAsync();
-                
+
                 // Log success
-                Logger.LogInfo($"Forecast completed: Lead Time={leadTime}, Reorder Threshold={reorderThreshold}");
-                
-                StatusMessage = $"Forecast ran with Lead Time: {leadTime}, Reorder Threshold: {reorderThreshold}";
+                Logger.LogInfo("Forecast completed successfully");
+                StatusMessage = "Forecast completed successfully";
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error running forecast", ex);
                 MessageBox.Show($"Error running forecast: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusMessage = "Error running forecast";
             }
         }
-        
-        private List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> GenerateDemoForecastData()
-        {
-            // Create demo forecast data
-            var startDate = DateTime.Now;
-            var results = new List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)>();
-            
-            var baseValue = 100f;
-            var random = new Random(123); // Fixed seed for reproducibility
-            
-            for (int i = 0; i < 10; i++)
-            {
-                var date = startDate.AddDays(i);
-                var forecast = baseValue + (i * 5) + (float)(random.NextDouble() * 10 - 5);
-                var lowerBound = forecast * 0.85f;
-                var upperBound = forecast * 1.15f;
-                
-                results.Add((date, forecast, lowerBound, upperBound));
-            }
-            
-            return results;
-        }
-        
-        private void UpdateForecastDetails(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults, 
-                                           int leadTime, int reorderThreshold)
-        {
-            // Create forecast data points
-            var forecastDetails = new ObservableCollection<ForecastDataPoint>();
-            
-            foreach (var result in forecastResults)
-            {
-                forecastDetails.Add(new ForecastDataPoint
-                {
-                    Period = result.Date.ToString("MMM dd"),
-                    Date = result.Date,
-                    ForecastedDemand = result.Forecast,
-                    LowerBound = result.LowerBound,
-                    UpperBound = result.UpperBound,
-                    ReorderPoint = result.Forecast < reorderThreshold ? "Yes" : "No"
-                });
-            }
-            
-            ForecastPoints = forecastDetails;
-            
-            // Update inventory recommendations
-            UpdateInventoryRecommendations(forecastResults, leadTime, reorderThreshold);
-        }
-        
-        private void UpdateInventoryRecommendations(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults,
-                                                     int leadTime, int reorderThreshold)
-        {
-            var recommendations = new ObservableCollection<InventoryRecommendation>();
-            
-            // For demo, use store IDs from Rossmann if available
-            var storeIds = _isRossmannDataLoaded
-                ? _rossmannRecords?.Select(r => r.StoreId).Distinct().Take(5).ToList() ?? new List<int> { 1, 2, 3, 4, 5 }
-                : new List<int> { 1, 2, 3, 4, 5 };
-            
-            foreach (var storeId in storeIds)
-            {
-                // Calculate total forecasted demand during lead time
-                double leadTimeDemand = forecastResults.Take(leadTime).Sum(r => r.Forecast);
-                
-                // Calculate safety stock based on variability
-                double stdDev = CalculateStandardDeviation(forecastResults.Select(r => (double)r.Forecast));
-                double safetyStock = stdDev * 1.65; // 95% service level
-                
-                // Calculate recommended order
-                double currentStock = 10 + (storeId * 2); // Mock value
-                double recommendedOrder = Math.Max(0, leadTimeDemand + safetyStock - currentStock);
-                
-                recommendations.Add(new InventoryRecommendation
-                {
-                    Item = $"Store {storeId}",
-                    CurrentStock = (int)currentStock,
-                    RecommendedOrder = (int)Math.Ceiling(recommendedOrder),
-                    LeadTimeDemand = Math.Round(leadTimeDemand, 2),
-                    SafetyStock = Math.Round(safetyStock, 2)
-                });
-            }
-            
-            InventoryRecommendations = recommendations;
-        }
-        
-        private async Task FetchMarketDataAsync(object? parameter = null)
+
+        private void UpdateForecastChart(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults)
         {
             try
             {
-                // Update status
+                if (forecastResults == null || forecastResults.Count == 0)
+                {
+                    return;
+                }
+
+                // Extract data for chart
+                var dates = forecastResults.Select(r => r.Date.ToString("MM/dd")).ToArray();
+                var forecasts = forecastResults.Select(r => (double)r.Forecast).ToArray();
+                var lowerBounds = forecastResults.Select(r => (double)r.LowerBound).ToArray();
+                var upperBounds = forecastResults.Select(r => (double)r.UpperBound).ToArray();
+
+                // Create series for the chart
+                var series = new ISeries[]
+                {
+                    new LineSeries<double>
+                    {
+                        Values = forecasts,
+                        Name = "Forecast",
+                        Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                        GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                        GeometryFill = new SolidColorPaint(SKColors.White),
+                        GeometrySize = 10
+                    },
+                    new LineSeries<double>
+                    {
+                        Values = lowerBounds,
+                        Name = "Lower Bound",
+                        Stroke = new SolidColorPaint(SKColors.LightGray, 2),
+                        GeometrySize = 0
+                    },
+                    new LineSeries<double>
+                    {
+                        Values = upperBounds,
+                        Name = "Upper Bound",
+                        Stroke = new SolidColorPaint(SKColors.LightGray, 2),
+                        GeometrySize = 0
+                    }
+                };
+
+                // Create area between upper and lower bounds
+                var areaSeries = new StackedAreaSeries<double>
+                {
+                    Values = upperBounds.Zip(lowerBounds, (u, l) => u - l).ToArray(),
+                    Name = "Confidence Interval",
+                    Stroke = null,
+                    Fill = new SolidColorPaint(SKColors.DodgerBlue.WithAlpha(40)),
+                    GeometrySize = 0,
+                    ZIndex = -1 // Draw behind other series
+                };
+
+                // Update chart axes
+                var xAxes = new Axis[]
+                {
+                    new Axis
+                    {
+                        Name = "Date",
+                        Labels = dates,
+                        LabelsRotation = 45
+                    }
+                };
+
+                var yAxes = new Axis[]
+                {
+                    new Axis
+                    {
+                        Name = "Sales"
+                    }
+                };
+
+                // Update chart properties
+                ChartSeries = series;
+                ChartXAxes = xAxes;
+                ChartYAxes = yAxes;
+
+                Logger.LogInfo("Chart updated successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error updating forecast chart", ex);
+                StatusMessage = "Error updating forecast chart";
+            }
+        }
+
+        private void UpdateForecastDetails(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults,
+                                          int leadTime, int reorderThreshold)
+        {
+            try
+            {
+                // Clear existing collections
+                ForecastPoints.Clear();
+                InventoryRecommendations.Clear();
+
+                // Calculate safety stock factor (using 95% confidence level = 1.65)
+                float safetyFactor = 1.65f;
+
+                // Get safety stock factor from settings if available
+                try
+                {
+                    string safetyFactorStr = AppSettings.GetSetting("SafetyStockFactor", "1.65");
+                    if (float.TryParse(safetyFactorStr, out float configuredFactor))
+                    {
+                        safetyFactor = configuredFactor;
+                    }
+                }
+                catch
+                {
+                    // Use default if settings can't be loaded
+                }
+
+                // Calculate standard deviation of forecast error (simplified)
+                float stdDevForecastError = forecastResults
+                    .Select(r => r.UpperBound - r.Forecast)
+                    .Average() / safetyFactor;
+
+                // Populate forecast points
+                foreach (var result in forecastResults)
+                {
+                    ForecastPoints.Add(new ForecastDataPoint
+                    {
+                        Period = result.Date.ToString("MM/dd/yyyy"),
+                        ForecastedDemand = result.Forecast,
+                        LowerBound = result.LowerBound,
+                        UpperBound = result.UpperBound,
+                        ReorderPoint = CalculateLeadTimeDemand(result.Forecast, leadTime) + 
+                                      safetyFactor * stdDevForecastError * (float)Math.Sqrt(leadTime)
+                    });
+                }
+
+                // Generate inventory recommendations based on forecast
+                GenerateInventoryRecommendations(forecastResults, leadTime, reorderThreshold, safetyFactor, stdDevForecastError);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error updating forecast details", ex);
+                MessageBox.Show($"Error updating forecast details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private float CalculateLeadTimeDemand(float dailyDemand, int leadTime)
+        {
+            return dailyDemand * leadTime;
+        }
+
+        private void GenerateInventoryRecommendations(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults,
+                                                     int leadTime, int reorderThreshold, float safetyFactor, float stdDevForecastError)
+        {
+            try
+            {
+                // For demonstration, we'll create recommendations for different store types
+                var storeTypes = new[] { "A", "B", "C", "D" };
+                var random = new Random(42); // Seed for reproducibility
+
+                foreach (var storeType in storeTypes)
+                {
+                    // For demo purposes, generate random values
+                    int currentStock = random.Next(10, 50);
+                    
+                    // Calculate average daily demand from forecast
+                    float avgDailyDemand = forecastResults.Average(r => r.Forecast);
+                    
+                    // Calculate lead time demand
+                    float leadTimeDemand = CalculateLeadTimeDemand(avgDailyDemand, leadTime);
+                    
+                    // Calculate safety stock
+                    float safetyStock = safetyFactor * stdDevForecastError * (float)Math.Sqrt(leadTime);
+                    
+                    // Calculate reorder point
+                    float reorderPoint = leadTimeDemand + safetyStock;
+                    
+                    // Calculate recommended order quantity
+                    int recommendedOrder = 0;
+                    if (currentStock <= reorderPoint)
+                    {
+                        // If current stock is below reorder point, order enough to reach optimal level
+                        recommendedOrder = (int)Math.Ceiling(reorderPoint + leadTimeDemand - currentStock);
+                    }
+
+                    // Add recommendation
+                    InventoryRecommendations.Add(new InventoryRecommendation
+                    {
+                        Item = storeType,
+                        CurrentStock = currentStock,
+                        ReorderPoint = reorderPoint,
+                        LeadTimeDemand = leadTimeDemand,
+                        SafetyStock = safetyStock,
+                        RecommendedOrder = recommendedOrder
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error generating inventory recommendations", ex);
+                throw;
+            }
+        }
+
+        private async Task FetchMarketDataAsync()
+        {
+            try
+            {
                 StatusMessage = "Fetching market data...";
-                
-                // Fetch economic indicators
-                var indicators = await _marketDataService.GetMarketIndicatorsAsync();
-                MarketData = new ObservableCollection<MarketIndicator>(indicators);
-                
-                // Fetch sector performance
-                var sectors = await _marketDataService.GetSectorPerformanceAsync();
-                SectorPerformance = new ObservableCollection<StockQuote>(sectors);
-                
+
+                await Task.Run(() =>
+                {
+                    // Clear existing collections
+                    MarketData.Clear();
+                    SectorPerformance.Clear();
+
+                    // Get API key from settings
+                    string apiKey = AppSettings.GetSetting("AlphaVantageApiKey", "APFCJIALTDC7YYUT");
+
+                    try
+                    {
+                        // Fetch market data using the service
+                        var marketIndicators = _marketDataService.GetMarketIndicators(apiKey);
+                        var sectorPerformance = _marketDataService.GetSectorPerformance(apiKey);
+
+                        // Update UI collections
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var indicator in marketIndicators)
+                            {
+                                MarketData.Add(indicator);
+                            }
+
+                            foreach (var sector in sectorPerformance)
+                            {
+                                SectorPerformance.Add(sector);
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning($"Error fetching real market data: {ex.Message}. Using demo data.");
+
+                        // Use demo data if API call fails
+                        var demoMarketData = GenerateDemoMarketData();
+                        var demoSectorData = GenerateDemoSectorData();
+
+                        // Update UI collections
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var indicator in demoMarketData)
+                            {
+                                MarketData.Add(indicator);
+                            }
+
+                            foreach (var sector in demoSectorData)
+                            {
+                                SectorPerformance.Add(sector);
+                            }
+                        });
+                    }
+                });
+
                 StatusMessage = "Market data updated";
             }
             catch (Exception ex)
@@ -470,121 +623,61 @@ namespace DemandForecastingApp.ViewModels
                 StatusMessage = "Error fetching market data";
             }
         }
-        
-        // Helper method to calculate standard deviation
-        private double CalculateStandardDeviation(IEnumerable<double> values)
+
+        private List<MarketIndicator> GenerateDemoMarketData()
         {
-            var enumerable = values as double[] ?? values.ToArray();
-            var avg = enumerable.Average();
-            var sum = enumerable.Sum(d => Math.Pow(d - avg, 2));
-            return Math.Sqrt(sum / (enumerable.Length - 1));
+            return new List<MarketIndicator>
+            {
+                new MarketIndicator { Key = "S&P 500", Value = "4,238.45", Change = "+1.2%", Impact = "Positive" },
+                new MarketIndicator { Key = "Crude Oil", Value = "$72.85", Change = "-0.8%", Impact = "Negative" },
+                new MarketIndicator { Key = "10-Year Treasury", Value = "1.89%", Change = "+0.05%", Impact = "Negative" },
+                new MarketIndicator { Key = "Gold", Value = "$1,845.20", Change = "+0.3%", Impact = "Positive" },
+                new MarketIndicator { Key = "USD Index", Value = "96.54", Change = "-0.2%", Impact = "Positive" },
+                new MarketIndicator { Key = "VIX", Value = "18.92", Change = "-5.1%", Impact = "Positive" }
+            };
         }
 
-        public Task<Dictionary<string, double>> AnalyzeMarketCorrelations()
+        private List<StockQuote> GenerateDemoSectorData()
         {
-            try
+            return new List<StockQuote>
             {
-                if (ForecastPoints == null || ForecastPoints.Count == 0 || MarketData == null || MarketData.Count == 0)
-                {
-                    return Task.FromResult(new Dictionary<string, double>());
-                }
+                new StockQuote { Symbol = "Consumer Staples", Price = 78.42m, Change = "+1.2%" },
+                new StockQuote { Symbol = "Technology", Price = 156.78m, Change = "+2.3%" },
+                new StockQuote { Symbol = "Healthcare", Price = 112.34m, Change = "+0.8%" },
+                new StockQuote { Symbol = "Energy", Price = 65.21m, Change = "-1.5%" },
+                new StockQuote { Symbol = "Financials", Price = 92.67m, Change = "+0.5%" },
+                new StockQuote { Symbol = "Industrials", Price = 104.89m, Change = "-0.3%" },
+                new StockQuote { Symbol = "Materials", Price = 85.34m, Change = "+0.7%" },
+                new StockQuote { Symbol = "Utilities", Price = 68.92m, Change = "-0.2%" },
+                new StockQuote { Symbol = "Real Estate", Price = 42.56m, Change = "+1.1%" }
+            };
+        }
+
+        private List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> GenerateDemoForecastData()
+        {
+            var startDate = DateTime.Today;
+            var random = new Random(42);
+            var forecasts = new List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)>();
+            
+            float baseValue = 100;
+            
+            for (int i = 0; i < 10; i++)
+            {
+                var date = startDate.AddDays(i);
+                var forecast = baseValue + i * 2 + (float)(random.NextDouble() * 5 - 2.5);
+                var error = (float)(forecast * 0.1); // 10% error margin
                 
-                // Get forecast values
-                var forecastValues = ForecastPoints.Select(p => p.ForecastedDemand).ToList();
+                forecasts.Add((
+                    date,
+                    forecast,
+                    forecast - error,
+                    forecast + error
+                ));
                 
-                // Create a dictionary to store correlations
-                var correlations = new Dictionary<string, double>();
-                
-                // Get sample market data values for correlation
-                foreach (var indicator in MarketData)
-                {
-                    // Try to parse the value as a double
-                    if (double.TryParse(indicator.Value.Replace("%", ""), out double value))
-                    {
-                        // This is just a mock correlation as we don't have historical data
-                        // In a real app, you would compare historical market data with historical sales
-                        double correlation = CalculateMockCorrelation(value, forecastValues.Average());
-                        correlations.Add(indicator.Key, Math.Round(correlation, 2));
-                    }
-                }
-                
-                return Task.FromResult(correlations);
+                baseValue = forecast; // Trend follows previous forecast
             }
-            catch (Exception ex)
-            {
-                Logger.LogError("Error analyzing market correlations", ex);
-                return Task.FromResult(new Dictionary<string, double>());
-            }
-        }
-
-        private double CalculateMockCorrelation(double marketValue, double forecastAverage)
-        {
-            // This is a simplified mock correlation function
-            // In a real app, you would use Pearson correlation coefficient with historical data
-            var random = new Random();
-            double baseCorrelation = random.NextDouble() * 2 - 1;  // Between -1 and 1
             
-            // Adjust correlation based on the relative values
-            double adjustment = (marketValue - forecastAverage) / (marketValue + forecastAverage);
-            
-            // Return a value between -1 and 1
-            return Math.Max(-1, Math.Min(1, baseCorrelation + adjustment * 0.2));
-        }
-
-        private void UpdateForecastChart(List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> forecastResults)
-        {
-            var labels = forecastResults.Select(r => r.Date.ToString("MMM dd")).ToArray();
-            
-            var forecastValues = forecastResults.Select(r => (double)r.Forecast).ToArray();
-            var lowerBoundValues = forecastResults.Select(r => (double)r.LowerBound).ToArray();
-            var upperBoundValues = forecastResults.Select(r => (double)r.UpperBound).ToArray();
-            
-            ChartSeries = new ISeries[]
-            {
-                new LineSeries<double>
-                {
-                    Values = forecastValues,
-                    Name = "Forecast",
-                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
-                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
-                    GeometryFill = new SolidColorPaint(SKColors.White),
-                    GeometrySize = 6
-                },
-                new LineSeries<double>
-                {
-                    Values = lowerBoundValues,
-                    Name = "Lower Bound",
-                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
-                    GeometrySize = 0
-                },
-                new LineSeries<double>
-                {
-                    Values = upperBoundValues,
-                    Name = "Upper Bound",
-                    Stroke = new SolidColorPaint(SKColors.LightBlue, 2),
-                    GeometrySize = 0
-                }
-            };
-            
-            ChartXAxes = new Axis[]
-            {
-                new Axis
-                {
-                    Name = "Date",
-                    Labels = labels,
-                    TextSize = 12,
-                    LabelsRotation = 45
-                }
-            };
-            
-            ChartYAxes = new Axis[]
-            {
-                new Axis
-                {
-                    Name = "Sales",
-                    TextSize = 12
-                }
-            };
+            return forecasts;
         }
     }
 }

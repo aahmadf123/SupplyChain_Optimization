@@ -25,37 +25,43 @@ namespace DemandForecastingApp.Models
         public LSTMForecaster(int timeSteps = 10)
         {
             _timeSteps = timeSteps;
+            _numFeatures = 12; // Set based on the number of features we extract
         }
         
         public void Train(List<RossmannSalesRecord> trainingData, int epochs = 20, int batchSize = 32)
         {
             try
             {
-                Logger.LogInfo("Starting LSTM model training");
-                
-                // Extract features and labels
+                // Create X (features) and y (labels)
                 var features = trainingData.Select(r => r.ToFeatureVector()).ToArray();
-                var labels = trainingData.Select(r => r.GetLabel()).ToArray();
+                var labels = trainingData.Select(r => r.Sales ?? 0).ToArray();
                 
                 // Normalize data
                 NormalizeData(features, labels);
                 
-                // Create time series windows
-                var (X, y) = CreateTimeSeriesData(features, labels);
-                
-                // Create and compile model
-                _numFeatures = features[0].Length;
+                // Build the LSTM model
                 BuildModel();
                 
+                // Convert to Numpy arrays
+                var X = features;
+                var y = labels;
+                
+                // Create 3D tensor input [samples, time_steps, features]
+                var xArray = CreateLSTMInput(X, _timeSteps);
+                var yArray = np.array(y.Skip(_timeSteps).ToArray());
+                
+                Logger.LogInfo($"Training LSTM model with {X.Length} samples, {epochs} epochs, batch size {batchSize}");
+
                 // Train the model
                 _model?.Fit(
-                    X, 
-                    y,
+                    xArray,
+                    yArray,
                     batch_size: batchSize,
                     epochs: epochs,
-                    validation_split: 0.2f
+                    validation_split: 0.2f,
+                    verbose: 1
                 );
-                
+
                 Logger.LogInfo("LSTM model training completed successfully");
             }
             catch (Exception ex)
@@ -128,19 +134,43 @@ namespace DemandForecastingApp.Models
                 // Prediction for the next horizonDays
                 for (int i = 0; i < horizonDays; i++)
                 {
-                    // Since we're using a simpler approach due to limitations, let's just make a single prediction
-                    // and add some noise for subsequent days
+                    // Use the trained model to make predictions
                     var forecastValue = 100.0f; // Default fallback value
-                    
+
                     try
                     {
-                        // In a real implementation, this would call model.Predict with properly shaped data
-                        // For now, we'll just generate a reasonable value
-                        var random = new Random();
-                        forecastValue = 100.0f + (float)random.NextDouble() * 50.0f;
-                        
-                        // Add more for each day in the future to simulate trend
-                        forecastValue += i * 5.0f;
+                        if (_model != null)
+                        {
+                            try
+                            {
+                                // Reshape input for LSTM: [samples, time steps, features]
+                                var reshapedInput = np.array(input).reshape(1, _timeSteps, _numFeatures);
+
+                                // Make prediction
+                                var prediction = _model.Predict(reshapedInput);
+
+                                // Extract the predicted value and denormalize
+                                var normalizedPrediction = (float)prediction[0][0];
+                                forecastValue = (normalizedPrediction * _labelStd) + _labelMean;
+
+                                // Add some trend component for future days
+                                forecastValue += i * (forecastValue * 0.02f); // 2% growth per day
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogError($"Error in LSTM prediction: {ex.Message}", ex);
+                                // Fallback to a reasonable estimate with trend
+                                var random = new Random();
+                                forecastValue = 100.0f + (float)random.NextDouble() * 50.0f + (i * 5.0f);
+                            }
+                        }
+                        else
+                        {
+                            Logger.LogWarning("Model not trained, using fallback prediction");
+                            // Fallback to a reasonable estimate with trend
+                            var random = new Random();
+                            forecastValue = 100.0f + (float)random.NextDouble() * 50.0f + (i * 5.0f);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -170,10 +200,11 @@ namespace DemandForecastingApp.Models
         
         private void NormalizeData(float[][] features, float[] labels)
         {
+            // Calculate means and standard deviations for features
             _featureMeans = new float[features[0].Length];
             _featureStds = new float[features[0].Length];
             
-            // Calculate means and stds for features
+            // Calculate means
             for (int j = 0; j < features[0].Length; j++)
             {
                 float sum = 0;
@@ -182,23 +213,35 @@ namespace DemandForecastingApp.Models
                     sum += features[i][j];
                 }
                 _featureMeans[j] = sum / features.Length;
-                
+            }
+            
+            // Calculate standard deviations
+            for (int j = 0; j < features[0].Length; j++)
+            {
                 float sumSquaredDiff = 0;
                 for (int i = 0; i < features.Length; i++)
                 {
-                    sumSquaredDiff += (float)Math.Pow(features[i][j] - _featureMeans[j], 2);
+                    float diff = features[i][j] - _featureMeans[j];
+                    sumSquaredDiff += diff * diff;
                 }
                 _featureStds[j] = (float)Math.Sqrt(sumSquaredDiff / features.Length);
-                _featureStds[j] = _featureStds[j] == 0 ? 1 : _featureStds[j]; // Prevent division by zero
-                
-                // Apply normalization
-                for (int i = 0; i < features.Length; i++)
+                // Avoid division by zero
+                if (_featureStds[j] < 0.0001f)
+                {
+                    _featureStds[j] = 1.0f;
+                }
+            }
+            
+            // Normalize features
+            for (int i = 0; i < features.Length; i++)
+            {
+                for (int j = 0; j < features[i].Length; j++)
                 {
                     features[i][j] = (features[i][j] - _featureMeans[j]) / _featureStds[j];
                 }
             }
             
-            // Calculate mean and std for labels
+            // Calculate mean and standard deviation for labels
             float labelSum = 0;
             for (int i = 0; i < labels.Length; i++)
             {
@@ -206,47 +249,102 @@ namespace DemandForecastingApp.Models
             }
             _labelMean = labelSum / labels.Length;
             
-            float labelSumSquaredDiff = 0;
+            float sumSquaredDiffLabels = 0;
             for (int i = 0; i < labels.Length; i++)
             {
-                labelSumSquaredDiff += (float)Math.Pow(labels[i] - _labelMean, 2);
+                float diff = labels[i] - _labelMean;
+                sumSquaredDiffLabels += diff * diff;
             }
-            _labelStd = (float)Math.Sqrt(labelSumSquaredDiff / labels.Length);
+            _labelStd = (float)Math.Sqrt(sumSquaredDiffLabels / labels.Length);
+            if (_labelStd < 0.0001f)
+            {
+                _labelStd = 1.0f;
+            }
             
-            // Apply normalization to labels
+            // Normalize labels
             for (int i = 0; i < labels.Length; i++)
             {
                 labels[i] = (labels[i] - _labelMean) / _labelStd;
             }
         }
         
-        // Simplified version that avoids using NDArray directly
-        private (float[][], float[]) CreateTimeSeriesData(float[][] features, float[] labels)
+        // Enhanced version that creates proper 3D tensors for LSTM
+        private NDArray CreateLSTMInput(float[][] features, int timeSteps)
         {
-            int samples = features.Length - _timeSteps;
+            int samples = features.Length - timeSteps;
+            int numFeatures = features[0].Length;
             
-            // Initialize arrays
-            float[][] X = new float[samples][];
-            float[] y = new float[samples];
+            float[][][] result = new float[samples][][];
             
-            // Create time windows
             for (int i = 0; i < samples; i++)
             {
-                X[i] = new float[_timeSteps * features[0].Length];
-                
-                // Flatten the time steps into a single array
-                for (int j = 0; j < _timeSteps; j++)
+                result[i] = new float[timeSteps][];
+                for (int j = 0; j < timeSteps; j++)
                 {
-                    for (int k = 0; k < features[0].Length; k++)
-                    {
-                        X[i][j * features[0].Length + k] = features[i + j][k];
-                    }
+                    result[i][j] = new float[numFeatures];
+                    Array.Copy(features[i + j], result[i][j], numFeatures);
                 }
-                
-                y[i] = labels[i + _timeSteps];
             }
             
-            return (X, y);
+            return np.array(result);
+        }
+        
+        public void SaveModel(string modelName)
+        {
+            try
+            {
+                if (_model == null)
+                {
+                    throw new InvalidOperationException("Model not initialized");
+                }
+                
+                string modelDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SupplyChainOptimization",
+                    "Models");
+                
+                if (!Directory.Exists(modelDirectory))
+                {
+                    Directory.CreateDirectory(modelDirectory);
+                }
+                
+                string modelPath = Path.Combine(modelDirectory, $"{modelName}.h5");
+                _model.Save(modelPath);
+                
+                Logger.LogInfo($"Model saved to {modelPath}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error saving model", ex);
+                throw;
+            }
+        }
+        
+        public void LoadModel(string modelName)
+        {
+            try
+            {
+                string modelDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SupplyChainOptimization",
+                    "Models");
+                
+                string modelPath = Path.Combine(modelDirectory, $"{modelName}.h5");
+                
+                if (!File.Exists(modelPath))
+                {
+                    throw new FileNotFoundException($"Model file not found: {modelPath}");
+                }
+                
+                _model = Sequential.LoadModel(modelPath) as Sequential;
+                
+                Logger.LogInfo($"Model loaded from {modelPath}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error loading model", ex);
+                throw;
+            }
         }
     }
 }

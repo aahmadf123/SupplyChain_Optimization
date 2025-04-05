@@ -10,20 +10,20 @@ namespace DemandForecastingApp.Models
         public float? Sales { get; set; }
         public int? Customers { get; set; }
         public int Open { get; set; }
-        public required string StateHoliday { get; set; }
+        public string StateHoliday { get; set; } = "0";
         public int SchoolHoliday { get; set; }
         public int Promo { get; set; }
         
         // Fields from store data
-        public required string StoreType { get; set; }
-        public required string Assortment { get; set; }
+        public string StoreType { get; set; } = "Unknown";
+        public string Assortment { get; set; } = "Unknown";
         public int? CompetitionDistance { get; set; }
         public int? CompetitionOpenSinceMonth { get; set; }
         public int? CompetitionOpenSinceYear { get; set; }
         public int Promo2 { get; set; }
         public int? Promo2SinceWeek { get; set; }
         public int? Promo2SinceYear { get; set; }
-        public required string PromoInterval { get; set; }
+        public string PromoInterval { get; set; } = "None";
         
         // Engineered features
         public int Year { get; set; }
@@ -41,26 +41,30 @@ namespace DemandForecastingApp.Models
         // Convert to vector for ML
         public float[] ToFeatureVector()
         {
-            // Example feature vector - adjust based on your needs
             return new float[]
             {
-                DayOfWeek,
+                StoreId,
+                Year,
                 Month,
+                Day,
+                DayOfWeek,
                 IsWeekend ? 1 : 0,
-                IsPublicHoliday ? 1 : 0,
-                IsEasterHoliday ? 1 : 0,
-                IsChristmas ? 1 : 0,
+                Open,
                 Promo,
+                IsPublicHoliday ? 1 : 0,
                 SchoolHoliday,
-                Promo2 == 1 ? 1 : 0,
-                CompetitionOpenMonths > 0 ? CompetitionOpenMonths : 0
+                CompetitionDistance ?? -1,
+                CompetitionOpenMonths,
+                Promo2,
+                Promo2ActiveMonths,
+                Promo2Active ? 1 : 0
             };
         }
         
         // Label for ML (what we're trying to predict)
         public float GetLabel()
         {
-            return Sales ?? 0f;
+            return Sales ?? 0;
         }
     }
 }

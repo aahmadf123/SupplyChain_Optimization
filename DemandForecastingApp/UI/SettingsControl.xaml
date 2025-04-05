@@ -22,9 +22,33 @@
                 <StackPanel Margin="10">
                     <TextBlock Text="Forecast Horizon (Days):" Margin="0,10,0,5"/>
                     <TextBox x:Name="ForecastHorizonTextBox" Text="10" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
-                    
-                    <TextBlock Text="ML Model Parameter:" Margin="0,10,0,5"/>
-                    <TextBox x:Name="MLModelParameterTextBox" Text="Default" Margin="0,0,0,10" Width="200" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="Confidence Level (%):" Margin="0,10,0,5"/>
+                    <TextBox x:Name="ConfidenceLevelTextBox" Text="95" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="Safety Stock Factor:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="SafetyStockFactorTextBox" Text="1.65" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Deep Learning Settings" Margin="0,10,0,20">
+                <StackPanel Margin="10">
+                    <TextBlock Text="LSTM Training Epochs:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="LSTMEpochsTextBox" Text="20" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="Batch Size:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="BatchSizeTextBox" Text="32" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="Learning Rate:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="LearningRateTextBox" Text="0.001" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="LSTM Units:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="LSTMUnitsTextBox" Text="50" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="Dropout Rate:" Margin="0,10,0,5"/>
+                    <TextBox x:Name="DropoutRateTextBox" Text="0.2" Margin="0,0,0,10" Width="100" HorizontalAlignment="Left"/>
+
+                    <CheckBox x:Name="UseGPUCheckBox" Content="Use GPU Acceleration (if available)" Margin="0,10,0,5"/>
                 </StackPanel>
             </GroupBox>
             
