@@ -13,6 +13,7 @@
   <ItemGroup>
     <!-- Only include needed packages; note that System.Windows.Forms package reference is not required -->
     <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-beta.801" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.TimeSeries" Version="3.0.1" />
     <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />

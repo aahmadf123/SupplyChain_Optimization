@@ -314,11 +314,11 @@ namespace DemandForecastingApp.Data
                 // Promo2 features
                 if (record.Promo2SinceYear.HasValue && record.Promo2SinceWeek.HasValue)
                 {
-                    var promo2StartDate = ISOWeek.ToDateTime(
+                    var promo2StartDate = GetDateFromWeekAndYear(
                         record.Promo2SinceYear.Value,
-                        record.Promo2SinceWeek.Value,
-                        DayOfWeek.Monday);
-                    record.Promo2ActiveMonths = (int)(record.Date - promo2StartDate).TotalDays / 30;
+                        record.Promo2SinceWeek.Value);
+                    
+                    record.Promo2ActiveMonths = (int)((record.Date - promo2StartDate).TotalDays / 30);
                     
                     if (record.PromoInterval != "None")
                     {

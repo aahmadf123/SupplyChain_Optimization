@@ -4,13 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DemandForecastingApp"
-        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         xmlns:ui="clr-namespace:DemandForecastingApp.UI"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         mc:Ignorable="d"
-        Title="Demand Forecasting and Inventory Optimization"
-        Height="700" Width="1000"
+        Title="Supply Chain Optimization" Height="800" Width="1200" 
         WindowStartupLocation="CenterScreen">
-
+    
     <Window.Resources>
         <!-- Dark Theme Colors -->
         <SolidColorBrush x:Key="BackgroundBrush" Color="#1E1E2F"/>
@@ -75,133 +74,298 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
-        <!-- Button Style -->
-        <Style x:Key="FuturisticButton" TargetType="Button">
-            <Setter Property="Background" Value="#673AB7"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#7E57C2"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        
-        <!-- Accent Button Style -->
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource FuturisticButton}">
-            <Setter Property="Background" Value="#8BC34A"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#9CCC65"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </Window.Resources>
 
     <Grid Background="{StaticResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="5"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- TOP CONFIGURATION AREA -->
-        <Border Grid.Row="0" Background="{StaticResource PanelBrush}" Margin="10" CornerRadius="5">
-            <Grid Margin="10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}">
+            <MenuItem Header="File" Foreground="{StaticResource TextBrush}">
+                <MenuItem Header="Load Data" Command="{Binding LoadDataCommand}"/>
+                <Separator/>
+                <MenuItem Header="Exit" Click="MenuExit_Click"/>
+            </MenuItem>
+            <MenuItem Header="Tools" Foreground="{StaticResource TextBrush}">
+                <MenuItem Header="Settings" Click="MenuSettings_Click"/>
+                <MenuItem Header="Market Data" Command="{Binding FetchMarketDataCommand}"/>
+                <Separator/>
+                <MenuItem Header="Download Sample Data"/>
+            </MenuItem>
+            <MenuItem Header="Help" Foreground="{StaticResource TextBrush}">
+                <MenuItem Header="Documentation"/>
+                <MenuItem Header="About"/>
+            </MenuItem>
+        </Menu>
+        
+        <!-- Main Content -->
+        <TabControl Grid.Row="1" Margin="10" Background="Transparent" BorderBrush="{StaticResource BorderBrush}">
+            <TabItem Header="Dashboard" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}">
+                <Grid Background="{StaticResource PanelBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                    <!-- Controls Panel -->
+                    <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                            Margin="0,0,0,10" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Configuration" Foreground="{StaticResource TextBrush}"
-                           FontSize="16" FontWeight="Medium" Margin="5,0,0,10"/>
+                            <StackPanel Grid.Column="0" Orientation="Vertical" Margin="5">
+                                <TextBlock Text="Forecasting Method:" Foreground="{StaticResource TextBrush}"
+                                          VerticalAlignment="Center" Margin="0,0,0,5"
+                                          ToolTip="Select how you want to predict future demand"/>
+                                <ComboBox x:Name="ModelTypeComboBox"
+                                          SelectedItem="{Binding SelectedModelType}" Margin="0,0,0,0"
+                                          ToolTip="Select forecasting method">
+                                    <ComboBoxItem Content="Standard (Best for most situations)"/>
+                                    <ComboBoxItem Content="Advanced (For complex patterns)"/>
+                                    <ComboBoxItem Content="Simple (For basic trends)"/>
+                                    <ComboBoxItem Content="Seasonal (For products with seasonal demand)"/>
+                                </ComboBox>
+                            </StackPanel>
 
-                <Button Grid.Column="1" Content="Help" x:Name="HelpButton"
-                        Style="{StaticResource FuturisticButton}"
-                        Background="#2196F3" Padding="15,5" Margin="5,0"
-                        Click="HelpButton_Click"/>
+                            <TextBlock Grid.Column="1" Text="Lead Time (days):" Foreground="{StaticResource TextBrush}"
+                                       VerticalAlignment="Center" Margin="10,0"
+                                       ToolTip="Number of days it takes to receive inventory after ordering"/>
+                            <TextBox Grid.Column="2" Text="{Binding LeadTime}" Width="50" Margin="5"/>
 
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal">
-                    <Button Content="Load Data" Click="LoadDataButton_Click"
-                            Background="#6A5ACD" Foreground="White"
-                            FontWeight="Bold" Padding="10,5" Margin="5,0"
-                            ToolTip="Load historical sales data for forecasting"/>
+                            <TextBlock Grid.Column="3" Text="Reorder Point:" Foreground="{StaticResource TextBrush}"
+                                       VerticalAlignment="Center" Margin="10,0"
+                                       ToolTip="Minimum inventory level that triggers a reorder"/>
+                            <TextBox Grid.Column="4" Text="{Binding ReorderThreshold}" Width="50" Margin="5"/>
 
-                    <Label Content="Lead Time:"
-                           Foreground="White" FontWeight="Bold" Margin="5,0"
-                           ToolTip="Number of days it takes to receive inventory after ordering"/>
-                    <TextBox x:Name="LeadTimeTextBox" Text="{Binding LeadTime}"
-                             Background="White" Foreground="Black"
-                             FontWeight="Bold" Margin="5,0" Width="40"/>
+                            <Button Grid.Column="5" Content="Generate Forecast" Command="{Binding RunForecastCommand}"
+                                    Style="{StaticResource AccentButton}"
+                                    Margin="5" Padding="10,5"
+                                    ToolTip="Generate demand forecast and inventory recommendations"/>
+                        </Grid>
+                    </Border>
 
-                    <Label Content="Reorder Threshold:"
-                           Foreground="White" FontWeight="Bold" Margin="5,0"
-                           ToolTip="Minimum inventory level that triggers a reorder"/>
-                    <TextBox x:Name="ReorderThresholdTextBox" Text="{Binding ReorderThreshold}"
-                             Background="White" Foreground="Black"
-                             FontWeight="Bold" Margin="5,0" Width="40"/>
+                    <!-- Dashboard Content -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <Button Style="{StaticResource AccentButton}" Margin="10,0,5,0"
-                            Command="{Binding RunForecastCommand}"
-                            ToolTip="Generate demand forecast and inventory recommendations">
-                        <TextBlock Text="Run Forecast" Margin="5"/>
-                    </Button>
+                        <!-- Left Panel - Forecast Chart -->
+                        <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                Margin="0,0,5,0" CornerRadius="5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
 
-                    <ComboBox Width="150" Margin="15,0,0,0" SelectedIndex="0"
-                              SelectedItem="{Binding SelectedModelType}"
-                              ToolTip="Select forecasting algorithm">
-                        <ComboBoxItem Content="SSA (Default)"/>
-                        <ComboBoxItem Content="LSTM (Deep Learning)"/>
-                    </ComboBox>
-                </StackPanel>
+                                <TextBlock Text="Sales Forecast" Foreground="{StaticResource AccentBrush}"
+                                           FontWeight="Bold" Margin="10,5"/>
 
-                <!-- Status Message -->
-                <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
-                           Text="{Binding StatusMessage}"
-                           Foreground="{StaticResource AccentBrush}"
-                           FontStyle="Italic" Margin="5,5,0,0"/>
-            </Grid>
-        </Border>
+                                <lvc:CartesianChart Grid.Row="1" Series="{Binding ChartSeries}"
+                                                    XAxes="{Binding ChartXAxes}"
+                                                    YAxes="{Binding ChartYAxes}"
+                                                    Margin="10"/>
+                            </Grid>
+                        </Border>
 
-        <!-- CHART DISPLAY AREA -->
-        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" Margin="10" CornerRadius="5">
-            <!-- Update to use LiveChartsCore -->
-            <lvc:CartesianChart Series="{Binding ChartSeries}" 
-                                XAxes="{Binding ChartXAxes}"
-                                YAxes="{Binding ChartYAxes}"
-                                Margin="10"/>
-            <!-- Using LiveChartsCore.SkiaSharpView.WPF CartesianChart -->
-        </Border>
+                        <!-- Right Panel - Data Grids -->
+                        <Grid Grid.Column="1" Margin="5,0,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-        <!-- GRID SPLITTER -->
-        <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
-                      Height="5" Background="#3F3F5F" ShowsPreview="True"/>
+                            <!-- Forecast Details -->
+                            <Border Grid.Row="0" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    Margin="0,0,0,5" CornerRadius="5">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
 
-        <!-- TAB CONTROL -->
-        <TabControl Grid.Row="3" Background="#3A3A3A" Foreground="White" FontWeight="Bold" Margin="10"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <TabItem Header="Welcome" Background="#3A3A3A" Foreground="White">
+                                    <TextBlock Text="Forecast Details" Foreground="{StaticResource AccentBrush}"
+                                               FontWeight="Bold" Margin="10,5"/>
+
+                                    <DataGrid Grid.Row="1" ItemsSource="{Binding ForecastPoints}"
+                                              AutoGenerateColumns="False" IsReadOnly="True"
+                                              Background="Transparent" Foreground="{StaticResource TextBrush}"
+                                              BorderBrush="{StaticResource BorderBrush}" Margin="5">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Period" Binding="{Binding Period}" Width="*"/>
+                                            <DataGridTextColumn Header="Forecast" Binding="{Binding ForecastedDemand, StringFormat=N2}" Width="*"/>
+                                            <DataGridTextColumn Header="Reorder Point" Binding="{Binding ReorderPoint, StringFormat=N2}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Inventory Recommendations -->
+                            <Border Grid.Row="1" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    Margin="0,5,0,5" CornerRadius="5">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Inventory Recommendations" Foreground="{StaticResource AccentBrush}"
+                                               FontWeight="Bold" Margin="10,5"/>
+
+                                    <DataGrid Grid.Row="1" ItemsSource="{Binding InventoryRecommendations}"
+                                              AutoGenerateColumns="False" IsReadOnly="True"
+                                              Background="Transparent" Foreground="{StaticResource TextBrush}"
+                                              BorderBrush="{StaticResource BorderBrush}" Margin="5">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Item" Binding="{Binding Item}" Width="*"/>
+                                            <DataGridTextColumn Header="Current" Binding="{Binding CurrentStock}" Width="*"/>
+                                            <DataGridTextColumn Header="Reorder Point" Binding="{Binding ReorderPoint, StringFormat=N1}" Width="*"/>
+                                            <DataGridTextColumn Header="Order" Binding="{Binding RecommendedOrder}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Status Panel -->
+                            <Border Grid.Row="2" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    Margin="0,5,0,0" Padding="10" CornerRadius="5">
+                                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"
+                                           Foreground="{StaticResource TextBrush}"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Market Analysis" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}">
+                <Grid Background="{StaticResource PanelBrush}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Controls -->
+                    <Border Background="{StaticResource PanelBrush}"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                            Margin="0,0,0,10" Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="Market data helps predict demand fluctuations based on economic indicators"
+                                       Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+
+                            <Button Grid.Column="1" Content="Refresh Market Data"
+                                    Command="{Binding FetchMarketDataCommand}"
+                                    Style="{StaticResource FuturisticButton}"
+                                    Margin="5"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Market Data Content -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Market Indicators -->
+                        <Border Grid.Column="0" Background="{StaticResource PanelBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                Margin="0,0,5,0" CornerRadius="5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Economic Indicators" Foreground="{StaticResource AccentBrush}"
+                                           FontWeight="Bold" Margin="10,5"/>
+
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding MarketData}"
+                                          IsReadOnly="True" AutoGenerateColumns="False"
+                                          Background="Transparent" Foreground="{StaticResource TextBrush}"
+                                          BorderBrush="{StaticResource BorderBrush}" Margin="5">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Indicator" Binding="{Binding Key}" Width="*"/>
+                                        <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                                        <DataGridTextColumn Header="Change" Binding="{Binding Change}" Width="*"/>
+                                        <DataGridTextColumn Header="Impact" Binding="{Binding Impact}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Sector Performance -->
+                        <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                Margin="5,0,0,0" CornerRadius="5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Sector Performance" Foreground="{StaticResource AccentBrush}"
+                                           FontWeight="Bold" Margin="10,5"/>
+
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding SectorPerformance}"
+                                          IsReadOnly="True" AutoGenerateColumns="False"
+                                          Background="Transparent" Foreground="{StaticResource TextBrush}"
+                                          BorderBrush="{StaticResource BorderBrush}" Margin="5">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Sector" Binding="{Binding Symbol}" Width="*"/>
+                                        <DataGridTextColumn Header="Price" Binding="{Binding Price, StringFormat=N2}" Width="*"/>
+                                        <DataGridTextColumn Header="Change" Binding="{Binding Change}" Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Change}" Value="Positive">
+                                                            <Setter Property="Foreground" Value="#4CAF50"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Change}" Value="Negative">
+                                                            <Setter Property="Foreground" Value="#F44336"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Settings" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}">
+                <Border Background="{StaticResource PanelBrush}" Padding="10">
+                    <ui:SettingsControl/>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="Help" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Background="{StaticResource PanelBrush}" Margin="10">
                         <TextBlock Text="Supply Chain Optimization System"
@@ -219,359 +383,68 @@
 
                                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
                                            Foreground="{StaticResource TextBrush}">
-                                    <Run FontWeight="Bold">1.</Run> Click the <Run FontWeight="Bold">Load Data</Run> button to import historical sales data
+                                    <Run FontWeight="Bold">1.</Run> Click the <Run FontWeight="Bold">Load Data</Run> button to import your sales history
                                     <LineBreak/>
-                                    <Run FontWeight="Bold">2.</Run> Set the <Run FontWeight="Bold">Lead Time</Run> and <Run FontWeight="Bold">Reorder Threshold</Run> parameters
+                                    <Run FontWeight="Bold">2.</Run> Set your <Run FontWeight="Bold">Lead Time</Run> (how long it takes to receive inventory) and <Run FontWeight="Bold">Reorder Point</Run> (when to order more)
                                     <LineBreak/>
-                                    <Run FontWeight="Bold">3.</Run> Select a forecasting model (SSA or LSTM Deep Learning)
+                                    <Run FontWeight="Bold">3.</Run> Choose a forecasting method that best fits your business
                                     <LineBreak/>
-                                    <Run FontWeight="Bold">4.</Run> Click <Run FontWeight="Bold">Run Forecast</Run> to generate predictions and recommendations
+                                    <Run FontWeight="Bold">4.</Run> Click <Run FontWeight="Bold">Generate Forecast</Run> to see predictions and recommendations
                                 </TextBlock>
                             </StackPanel>
                         </Border>
 
                         <Border Background="#252536" CornerRadius="5" Padding="15" Margin="5,0,5,15">
                             <StackPanel>
-                                <TextBlock Text="Deep Learning in Supply Chain"
+                                <TextBlock Text="Understanding Forecasting Methods"
                                            FontSize="18" FontWeight="Bold"
                                            Foreground="{StaticResource TextBrush}"
                                            Margin="0,0,0,10"/>
 
                                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
                                            Foreground="{StaticResource TextBrush}">
-                                    This system uses Long Short-Term Memory (LSTM) neural networks to provide accurate demand forecasting.
-                                    LSTM networks are particularly effective for time series forecasting because they can:
+                                    Our system uses different methods to predict future demand:
                                     <LineBreak/><LineBreak/>
-                                    • Capture long-term dependencies in data
+                                    <Run FontWeight="Bold">Standard Method:</Run> Best for most situations, balances accuracy and speed
                                     <LineBreak/>
-                                    • Learn complex patterns that traditional methods might miss
+                                    <Run FontWeight="Bold">Advanced Method:</Run> Better for complex patterns, but takes longer to process
                                     <LineBreak/>
-                                    • Incorporate multiple factors affecting demand
+                                    <Run FontWeight="Bold">Simple Method:</Run> Good for basic trends, works quickly with limited data
                                     <LineBreak/>
-                                    • Adapt to changing market conditions
-                                    <LineBreak/><LineBreak/>
-                                    The LSTM model is trained on historical sales data and can consider factors such as promotions,
-                                    holidays, and store characteristics to generate more accurate forecasts.
+                                    <Run FontWeight="Bold">Seasonal Method:</Run> Specialized for products with predictable seasonal demand
                                 </TextBlock>
                             </StackPanel>
                         </Border>
-
+                        
                         <Border Background="#252536" CornerRadius="5" Padding="15" Margin="5,0,5,15">
                             <StackPanel>
-                                <TextBlock Text="Key Supply Chain Concepts"
+                                <TextBlock Text="Understanding Your Results"
                                            FontSize="18" FontWeight="Bold"
                                            Foreground="{StaticResource TextBrush}"
                                            Margin="0,0,0,10"/>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                        <TextBlock Text="Lead Time" FontWeight="Bold"
-                                                   Foreground="{StaticResource AccentBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
-                                                   Foreground="{StaticResource TextBrush}">
-                                            The time between placing an order and receiving it. Longer lead times require higher safety stock.
-                                        </TextBlock>
-
-                                        <TextBlock Text="Safety Stock" FontWeight="Bold"
-                                                   Foreground="{StaticResource AccentBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
-                                                   Foreground="{StaticResource TextBrush}">
-                                            Extra inventory kept to prevent stockouts due to demand variability or supply delays.
-                                        </TextBlock>
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Reorder Point" FontWeight="Bold"
-                                                   Foreground="{StaticResource AccentBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
-                                                   Foreground="{StaticResource TextBrush}">
-                                            The inventory level at which a new order should be placed to avoid stockouts.
-                                        </TextBlock>
-
-                                        <TextBlock Text="Economic Order Quantity (EOQ)" FontWeight="Bold"
-                                                   Foreground="{StaticResource AccentBrush}"/>
-                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
-                                                   Foreground="{StaticResource TextBrush}">
-                                            The optimal order quantity that minimizes total inventory costs.
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Grid>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
+                                           Foreground="{StaticResource TextBrush}">
+                                    After generating a forecast, you'll see:
+                                    <LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Sales Forecast:</Run> A graph showing predicted future demand
+                                    <LineBreak/>
+                                    <Run FontWeight="Bold">Forecast Details:</Run> Specific numbers for each time period
+                                    <LineBreak/>
+                                    <Run FontWeight="Bold">Inventory Recommendations:</Run> When and how much to order to meet demand
+                                </TextBlock>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-
-            <TabItem Header="Forecast Details">
-                <DataGrid ItemsSource="{Binding ForecastPoints}" AutoGenerateColumns="False" IsReadOnly="True"
-                          Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
-                          GridLinesVisibility="All" HeadersVisibility="All">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Date" Binding="{Binding Period}" Width="80"/>
-                        <DataGridTextColumn Header="Forecast" Binding="{Binding ForecastedDemand, StringFormat={}{0:F2}}" Width="120"/>
-                        <DataGridTextColumn Header="Lower Bound" Binding="{Binding LowerBound, StringFormat={}{0:F2}}" Width="120"/>
-                        <DataGridTextColumn Header="Upper Bound" Binding="{Binding UpperBound, StringFormat={}{0:F2}}" Width="120"/>
-                        <DataGridTextColumn Header="Reorder Point" Binding="{Binding ReorderPoint}" Width="100"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-
-            <TabItem Header="Inventory Recommendations" Background="#3A3A3A" Foreground="White">
-                <DataGrid ItemsSource="{Binding InventoryRecommendations}" AutoGenerateColumns="False" IsReadOnly="True"
-                          Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
-                          GridLinesVisibility="All" HeadersVisibility="All">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Store" Binding="{Binding Item}" Width="80"/>
-                        <DataGridTextColumn Header="Current Stock" Binding="{Binding CurrentStock}" Width="100"/>
-                        <DataGridTextColumn Header="Recommended Order" Binding="{Binding RecommendedOrder}" Width="130"/>
-                        <DataGridTextColumn Header="Lead Time Demand" Binding="{Binding LeadTimeDemand, StringFormat=F2}" Width="130"/>
-                        <DataGridTextColumn Header="Safety Stock" Binding="{Binding SafetyStock, StringFormat=F2}" Width="100"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-
-            <TabItem Header="Market Analysis" Background="#3A3A3A" Foreground="White">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="Economic Indicators" Foreground="{StaticResource TextBrush}"
-                               FontWeight="Medium" Margin="10,5"/>
-
-                    <ListView Grid.Row="1" ItemsSource="{Binding MarketData}" Background="{StaticResource PanelBrush}"
-                              Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"
-                              BorderThickness="1" Margin="10,0,10,10">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Indicator" Width="180">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Key}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Value" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Value}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Change" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Change}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Impact" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Impact}" Foreground="{StaticResource TextBrush}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Impact}" Value="Positive">
-                                                                <Setter Property="Foreground" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Impact}" Value="Negative">
-                                                                <Setter Property="Foreground" Value="#F44336"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Text="Sector Performance" Foreground="{StaticResource TextBrush}"
-                                   FontWeight="Medium" Margin="10,5"/>
-
-                        <Button Grid.Column="1" Content="Refresh Data"
-                                Command="{Binding FetchMarketDataCommand}"
-                                Style="{StaticResource FuturisticButton}"
-                                Margin="5"/>
-                    </Grid>
-
-                    <ListView Grid.Row="3" ItemsSource="{Binding SectorPerformance}" Background="{StaticResource PanelBrush}"
-                              Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"
-                              BorderThickness="1" Margin="10,0,10,10">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Sector" Width="200">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Symbol}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Performance" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Change}" Foreground="{StaticResource TextBrush}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Change}" Value="Positive">
-                                                                <Setter Property="Foreground" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Change}" Value="Negative">
-                                                                <Setter Property="Foreground" Value="#F44336"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="Settings" Background="#3A3A3A" Foreground="White">
-                <ui:SettingsControl Margin="0,10,0,0"/>
-            </TabItem>
-        </TabControl>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <TextBlock Text="Economic Indicators" Foreground="{StaticResource TextBrush}" 
-                               FontWeight="Medium" Margin="10,5"/>
-                    
-                    <ListView Grid.Row="1" ItemsSource="{Binding MarketData}" Background="{StaticResource PanelBrush}"
-                              Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"
-                              BorderThickness="1" Margin="10,0,10,10">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Indicator" Width="180">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Key}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Value" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Value}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Change" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Change}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Impact" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Impact}" Foreground="{StaticResource TextBrush}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Impact}" Value="Positive">
-                                                                <Setter Property="Foreground" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Impact}" Value="Negative">
-                                                                <Setter Property="Foreground" Value="#F44336"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                    
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Text="Sector Performance" Foreground="{StaticResource TextBrush}" 
-                                   FontWeight="Medium" Margin="10,5"/>
-                        
-                        <Button Grid.Column="1" Content="Refresh Data" 
-                                Command="{Binding FetchMarketDataCommand}" 
-                                Style="{StaticResource FuturisticButton}" 
-                                Margin="5"/>
-                    </Grid>
-                    
-                    <ListView Grid.Row="3" ItemsSource="{Binding SectorPerformance}" Background="{StaticResource PanelBrush}"
-                              Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"
-                              BorderThickness="1" Margin="10,0,10,10">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="Sector" Width="200">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Symbol}" Foreground="{StaticResource TextBrush}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Header="Performance" Width="100">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Change}" Foreground="{StaticResource TextBrush}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Change}" Value="Positive">
-                                                                <Setter Property="Foreground" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Change}" Value="Negative">
-                                                                <Setter Property="Foreground" Value="#F44336"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                </Grid>
-            </TabItem>
-            
-            <TabItem Header="Settings" Background="#3A3A3A" Foreground="White">
-                <ui:SettingsControl/>
-            </TabItem>
         </TabControl>
 
-        <!-- STATUS BAR -->
-        <Border Grid.Row="4" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="0,1,0,0" Padding="10,5">
-            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextBrush}"/>
-        </Border>
+        <!-- Footer Status Bar -->
+        <StatusBar Grid.Row="2" Background="{StaticResource PanelBrush}">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextBrush}"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

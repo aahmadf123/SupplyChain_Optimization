@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using DemandForecastingApp.Data;
 using DemandForecastingApp.ViewModels;
+using DemandForecastingApp.Utils;
 
 namespace DemandForecastingApp
 {
@@ -11,17 +12,25 @@ namespace DemandForecastingApp
     /// </summary>
     public partial class MainWindow : Window
     {
-        private MainViewModel _viewModel;
+        private readonly MainViewModel _viewModel;
 
         public MainWindow()
         {
             InitializeComponent();
-            _viewModel = new MainViewModel();
-            DataContext = _viewModel;
-
-            // Set initial values for text boxes
-            LeadTimeTextBox.Text = _viewModel.LeadTime;
-            ReorderThresholdTextBox.Text = _viewModel.ReorderThreshold;
+            
+            try
+            {
+                _viewModel = new MainViewModel();
+                DataContext = _viewModel;
+                
+                Logger.LogInfo("Application started successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error initializing application", ex);
+                MessageBox.Show($"Error initializing application: {ex.Message}", 
+                    "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadDataButton_Click(object sender, RoutedEventArgs e)
@@ -42,86 +51,66 @@ namespace DemandForecastingApp
 
         private void HelpButton_Click(object sender, RoutedEventArgs e)
         {
-            // Create a help window with guidance for users
-            var helpWindow = new Window
+            try
             {
-                Title = "Supply Chain Optimization Help",
-                Width = 600,
-                Height = 500,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = this,
-                Background = (System.Windows.Media.SolidColorBrush)Resources["BackgroundBrush"]
-            };
-
-            var scrollViewer = new ScrollViewer
+                var helpWindow = new UI.HelpWindow
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                helpWindow.ShowDialog();
+            }
+            catch (Exception ex)
             {
-                Margin = new Thickness(15),
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-            };
-
-            var helpContent = new StackPanel
-            {
-                Margin = new Thickness(10)
-            };
-
-            // Add help content
-            AddHelpSection(helpContent, "Getting Started",
-                "1. Click 'Load Data' to import historical sales data\n" +
-                "2. Set the Lead Time (days to receive inventory after ordering)\n" +
-                "3. Set the Reorder Threshold (minimum inventory level that triggers a reorder)\n" +
-                "4. Select a forecasting model (SSA or LSTM)\n" +
-                "5. Click 'Run Forecast' to generate predictions and recommendations");
-
-            AddHelpSection(helpContent, "Forecasting Models",
-                "SSA (Default): Singular Spectrum Analysis - A traditional time series forecasting method that works well with seasonal data.\n\n" +
-                "LSTM (Deep Learning): Long Short-Term Memory neural network - A deep learning approach that can capture complex patterns and relationships in the data. " +
-                "LSTM typically performs better with large datasets and can incorporate multiple factors affecting demand.");
-
-            AddHelpSection(helpContent, "Understanding Results",
-                "Forecast Chart: Visualizes predicted demand over time with confidence intervals\n\n" +
-                "Forecast Details: Tabular data showing forecasted values for each period\n\n" +
-                "Inventory Recommendations: Suggested order quantities based on forecasted demand, lead time, and safety stock calculations\n\n" +
-                "Market Analysis: Economic indicators and sector performance that may impact supply chain decisions");
-
-            AddHelpSection(helpContent, "Tips for Supply Chain Students",
-                "• Experiment with different lead times to see how they affect inventory recommendations\n" +
-                "• Compare SSA and LSTM forecasts to understand the strengths of each approach\n" +
-                "• Analyze how market indicators correlate with demand patterns\n" +
-                "• Use the system to practice making inventory decisions in different scenarios");
-
-            scrollViewer.Content = helpContent;
-            helpWindow.Content = scrollViewer;
-            helpWindow.ShowDialog();
+                Logger.LogError("Error opening help window", ex);
+                MessageBox.Show($"Error opening help: {ex.Message}", 
+                    "Help Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void AddHelpSection(StackPanel parent, string title, string content)
+        private void MenuExit_Click(object sender, RoutedEventArgs e)
         {
-            // Add section title
-            parent.Children.Add(new TextBlock
+            try
             {
-                Text = title,
-                FontSize = 18,
-                FontWeight = FontWeights.Bold,
-                Foreground = (System.Windows.Media.SolidColorBrush)Resources["TextBrush"],
-                Margin = new Thickness(0, 10, 0, 5)
-            });
+                Logger.LogInfo("Application exit requested");
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error during application shutdown", ex);
+            }
+        }
 
-            // Add section content
-            parent.Children.Add(new TextBlock
+        private void MenuSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
             {
-                Text = content,
-                FontSize = 14,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = (System.Windows.Media.SolidColorBrush)Resources["TextBrush"],
-                Margin = new Thickness(0, 0, 0, 15)
-            });
+                var settingsWindow = new UI.SettingsWindow
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                settingsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error opening settings window", ex);
+                MessageBox.Show($"Error opening settings: {ex.Message}", 
+                    "Settings Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
-            // Add separator
-            parent.Children.Add(new Separator
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TabControl tabControl)
             {
-                Margin = new Thickness(0, 5, 0, 15),
-                Background = (System.Windows.Media.SolidColorBrush)Resources["BorderBrush"]
-            });
+                // Handle tab selection change
+                var selectedTab = tabControl.SelectedItem as TabItem;
+                if (selectedTab != null)
+                {
+                    _viewModel.HandleTabChange(selectedTab.Header.ToString());
+                }
+            }
         }
     }
 }

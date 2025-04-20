@@ -1,0 +1,215 @@
+<Window x:Class="DemandForecastingApp.UI.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Help &amp; Documentation" Height="700" Width="900"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Help &amp; Documentation" 
+                   FontSize="24" 
+                   FontWeight="Bold"
+                   Foreground="{StaticResource AccentBrush}"
+                   Margin="0,0,0,20"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <!-- Getting Started -->
+                <GroupBox Header="Getting Started" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="Welcome to the Supply Chain Optimization application! This tool helps you predict future demand and optimize your inventory levels to reduce costs and improve customer satisfaction."/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,10">
+                            <Run Text="Follow these simple steps to get started:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="1. Load your sales data using the 'Load Data' button"/>
+                            <LineBreak/>
+                            <Run Text="2. Choose a forecasting method that best fits your business"/>
+                            <LineBreak/>
+                            <Run Text="3. Set your lead time (how long it takes to receive inventory)"/>
+                            <LineBreak/>
+                            <Run Text="4. Set your reorder point (when to order more inventory)"/>
+                            <LineBreak/>
+                            <Run Text="5. Click 'Generate Forecast' to see predictions and recommendations"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Data Import -->
+                <GroupBox Header="Importing Your Data" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="You can import your sales data in two ways:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="1. Sample Data (for testing)"/>
+                            <LineBreak/>
+                            <Run Text="   - Click 'Download Sample Data' in the Tools menu"/>
+                            <LineBreak/>
+                            <Run Text="   - This provides example data to help you learn the system"/>
+                            <LineBreak/>
+                            <Run Text="2. Your Own Data"/>
+                            <LineBreak/>
+                            <Run Text="   - Create a CSV file with columns: Date, Sales"/>
+                            <LineBreak/>
+                            <Run Text="   - Optional columns: Customers, Promotions, Holidays"/>
+                            <LineBreak/>
+                            <Run Text="   - Click 'Load Data' and select your file"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Forecasting Methods -->
+                <GroupBox Header="Choosing a Forecasting Method" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="Our system offers different methods to predict future demand:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="1. Standard Method"/>
+                            <LineBreak/>
+                            <Run Text="   - Best for most business situations"/>
+                            <LineBreak/>
+                            <Run Text="   - Balances accuracy and processing speed"/>
+                            <LineBreak/>
+                            <Run Text="   - Works well with 3+ months of data"/>
+                            <LineBreak/>
+                            <Run Text="2. Advanced Method"/>
+                            <LineBreak/>
+                            <Run Text="   - Better for complex demand patterns"/>
+                            <LineBreak/>
+                            <Run Text="   - Identifies subtle trends and seasonality"/>
+                            <LineBreak/>
+                            <Run Text="   - Requires more data (6+ months) and takes longer"/>
+                            <LineBreak/>
+                            <Run Text="3. Simple Method"/>
+                            <LineBreak/>
+                            <Run Text="   - Good for basic trends with limited data"/>
+                            <LineBreak/>
+                            <Run Text="   - Works quickly with just 1-2 months of data"/>
+                            <LineBreak/>
+                            <Run Text="4. Seasonal Method"/>
+                            <LineBreak/>
+                            <Run Text="   - Specialized for products with predictable seasonal demand"/>
+                            <LineBreak/>
+                            <Run Text="   - Best for retail, fashion, or holiday-related items"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Inventory Management -->
+                <GroupBox Header="Understanding Inventory Recommendations" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="Our system helps you optimize inventory levels using proven business methods:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="1. Optimal Order Quantity"/>
+                            <LineBreak/>
+                            <Run Text="   - Calculates the most cost-effective amount to order"/>
+                            <LineBreak/>
+                            <Run Text="   - Balances ordering costs and holding costs"/>
+                            <LineBreak/>
+                            <Run Text="2. Reorder Point"/>
+                            <LineBreak/>
+                            <Run Text="   - Tells you when to place your next order"/>
+                            <LineBreak/>
+                            <Run Text="   - Accounts for lead time and safety stock"/>
+                            <LineBreak/>
+                            <Run Text="3. Safety Stock"/>
+                            <LineBreak/>
+                            <Run Text="   - Extra inventory to protect against unexpected demand"/>
+                            <LineBreak/>
+                            <Run Text="   - Based on your desired service level and demand variability"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Market Analysis -->
+                <GroupBox Header="Using Market Data" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="Our system can incorporate market data to improve forecasting accuracy:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="1. Economic Indicators"/>
+                            <LineBreak/>
+                            <Run Text="   - GDP growth, inflation, and consumer confidence"/>
+                            <LineBreak/>
+                            <Run Text="   - Helps predict overall market conditions"/>
+                            <LineBreak/>
+                            <Run Text="2. Industry Trends"/>
+                            <LineBreak/>
+                            <Run Text="   - Sector performance and competitor activity"/>
+                            <LineBreak/>
+                            <Run Text="   - Identifies market opportunities and threats"/>
+                            <LineBreak/>
+                            <Run Text="3. Seasonal Factors"/>
+                            <LineBreak/>
+                            <Run Text="   - Holidays, weather, and seasonal events"/>
+                            <LineBreak/>
+                            <Run Text="   - Improves accuracy for seasonal products"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Tips & Best Practices -->
+                <GroupBox Header="Tips for Better Results" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock TextWrapping="Wrap" Margin="0,5">
+                            <Run Text="Follow these tips to get the most from our system:"/>
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="20,5">
+                            <Run Text="• Use at least 3 months of historical data for accurate forecasts"/>
+                            <LineBreak/>
+                            <Run Text="• Update your data regularly to capture recent trends"/>
+                            <LineBreak/>
+                            <Run Text="• Adjust your service level based on product importance"/>
+                            <LineBreak/>
+                            <Run Text="• Review and adjust forecasts based on actual results"/>
+                            <LineBreak/>
+                            <Run Text="• Export reports to share with your team"/>
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Close Button -->
+        <Button Grid.Row="2" 
+                Content="Close" 
+                Style="{StaticResource FuturisticButton}"
+                HorizontalAlignment="Right"
+                Margin="0,20,0,0"
+                Padding="20,5"
+                Click="CloseButton_Click"/>
+    </Grid>
+</Window> 

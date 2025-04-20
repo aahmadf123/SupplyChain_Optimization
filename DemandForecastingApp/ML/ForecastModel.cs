@@ -198,16 +198,8 @@ namespace DemandForecastingApp.ML
         private double CalculateStandardDeviation(List<double> values)
         {
             double mean = values.Average();
-            double sumSquaredDiffs = values.Sum(v => (v - mean) * (v - mean));
-            return Math.Sqrt(sumSquaredDiffs / (values.Count - 1));
+            double sumSquaredDiff = values.Sum(x => Math.Pow(x - mean, 2));
+            return Math.Sqrt(sumSquaredDiff / (values.Count - 1));
         }
-    }
-
-    // Simple demand record for forecasting input
-    public class DemandRecord
-    {
-        public DateTime Date { get; set; }
-        public float Sales { get; set; }
-        public string StateHoliday { get; set; } = "0";
     }
 }

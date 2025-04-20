@@ -1,0 +1,147 @@
+<Window x:Class="DemandForecastingApp.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="600" Width="800"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Application Settings" 
+                   FontSize="24" 
+                   FontWeight="Bold"
+                   Foreground="{StaticResource AccentBrush}"
+                   Margin="0,0,0,20"/>
+
+        <!-- Settings Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <!-- API Settings -->
+                <GroupBox Header="API Configuration" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Alpha Vantage API Key" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <TextBox Text="{Binding AlphaVantageApiKey}" 
+                                Margin="0,5,0,10"/>
+                        
+                        <TextBlock Text="Weather API Key" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <TextBox Text="{Binding WeatherApiKey}" 
+                                Margin="0,5,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Forecasting Settings -->
+                <GroupBox Header="Forecasting Configuration" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Default Forecast Horizon (days)" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <TextBox Text="{Binding DefaultForecastHorizon}" 
+                                Margin="0,5,0,10"/>
+                        
+                        <TextBlock Text="Confidence Interval (%)" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <Slider Value="{Binding ConfidenceInterval}" 
+                                Minimum="80" 
+                                Maximum="99" 
+                                TickFrequency="1" 
+                                IsSnapToTickEnabled="True"
+                                Margin="0,5,0,10"/>
+                        
+                        <TextBlock Text="Default Model" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}"
+                                SelectedItem="{Binding DefaultModel}"
+                                Margin="0,5,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Inventory Settings -->
+                <GroupBox Header="Inventory Configuration" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Default Lead Time (days)" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <TextBox Text="{Binding DefaultLeadTime}" 
+                                Margin="0,5,0,10"/>
+                        
+                        <TextBlock Text="Default Reorder Threshold" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <TextBox Text="{Binding DefaultReorderThreshold}" 
+                                Margin="0,5,0,10"/>
+                        
+                        <TextBlock Text="Service Level (%)" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <Slider Value="{Binding ServiceLevel}" 
+                                Minimum="80" 
+                                Maximum="99" 
+                                TickFrequency="1" 
+                                IsSnapToTickEnabled="True"
+                                Margin="0,5,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Data Settings -->
+                <GroupBox Header="Data Configuration" 
+                         Margin="0,0,0,20"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Default Data Directory" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                        <Grid Margin="0,5,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding DefaultDataDirectory}" 
+                                    Grid.Column="0"/>
+                            <Button Content="Browse" 
+                                    Grid.Column="1"
+                                    Margin="5,0,0,0"
+                                    Command="{Binding BrowseDataDirectoryCommand}"/>
+                        </Grid>
+                        
+                        <CheckBox Content="Auto-save forecasts" 
+                                IsChecked="{Binding AutoSaveForecasts}"
+                                Foreground="{StaticResource TextBrush}"
+                                Margin="0,5,0,10"/>
+                        
+                        <CheckBox Content="Auto-refresh market data" 
+                                IsChecked="{Binding AutoRefreshMarketData}"
+                                Foreground="{StaticResource TextBrush}"
+                                Margin="0,5,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,20,0,0">
+            <Button Content="Save" 
+                    Command="{Binding SaveSettingsCommand}"
+                    Style="{StaticResource AccentButton}"
+                    Margin="0,0,10,0"/>
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource FuturisticButton}"/>
+        </StackPanel>
+    </Grid>
+</Window> 
