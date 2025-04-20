@@ -11,14 +11,14 @@ namespace DemandForecastingApp.ViewModels
     /// </summary>
     public abstract class ViewModelBase : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the PropertyChanged event for a property.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed. 
         /// If not provided, the calling property name is used.</param>
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -31,7 +31,7 @@ namespace DemandForecastingApp.ViewModels
         /// <param name="value">New value for the property</param>
         /// <param name="propertyName">Name of the property. If not provided, the calling property name is used.</param>
         /// <returns>True if the value was changed, false otherwise</returns>
-        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (Equals(field, value)) return false;
             field = value;

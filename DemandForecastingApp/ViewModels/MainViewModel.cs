@@ -27,8 +27,8 @@ namespace DemandForecastingApp.ViewModels
             set => SetProperty(ref _demandData, value);
         }
         
-        private ObservableCollection<ForecastResult> _forecastData;
-        public ObservableCollection<ForecastResult> ForecastData
+        private ObservableCollection<DemandRecord> _forecastData;
+        public ObservableCollection<DemandRecord> ForecastData
         {
             get => _forecastData;
             set => SetProperty(ref _forecastData, value);
@@ -122,16 +122,16 @@ namespace DemandForecastingApp.ViewModels
         public ICommand GenerateDemoDataCommand { get; }
         
         // Services and data
-        private readonly DataService _dataService;
-        private readonly ForecastModel _forecastModel;
+        private readonly IDataService _dataService;
+        private readonly ML.ForecastModel _forecastModel;
         private List<RossmannSalesRecord> _salesData;
         
         public MainViewModel()
         {
             _dataService = new DataService();
-            _forecastModel = new ForecastModel();
+            _forecastModel = new ML.ForecastModel();
             _demandData = new ObservableCollection<DemandRecord>();
-            _forecastData = new ObservableCollection<ForecastResult>();
+            _forecastData = new ObservableCollection<DemandRecord>();
             _selectedForecaster = "Standard";
             _leadTime = 7;
             _reorderPoint = 100;
@@ -144,14 +144,14 @@ namespace DemandForecastingApp.ViewModels
             GenerateDemoDataCommand = new RelayCommand(GenerateDemoData, _ => !IsLoading);
         }
         
-        private async void ExecuteLoadData(object parameter)
+        private async void ExecuteLoadData(object? parameter)
         {
             try
             {
                 IsLoading = true;
                 StatusMessage = "Loading data...";
                 
-                var data = await Task.Run(() => _dataService.LoadDemandData());
+                var data = await _dataService.LoadDemandDataAsync();
                 DemandData.Clear();
                 foreach (var record in data)
                 {
@@ -170,7 +170,7 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
-        private async void ExecuteRunForecast(object parameter)
+        private async void ExecuteRunForecast(object? parameter)
         {
             try
             {
@@ -196,14 +196,14 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
-        private async void ExecuteExportResults(object parameter)
+        private async void ExecuteExportResults(object? parameter)
         {
             try
             {
                 IsLoading = true;
                 StatusMessage = "Exporting results...";
                 
-                await Task.Run(() => _dataService.ExportForecastResults(ForecastData));
+                await _dataService.ExportForecastResultsAsync(ForecastData);
                 StatusMessage = "Results exported successfully";
             }
             catch (Exception ex)
@@ -217,12 +217,20 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
-        private async void GenerateDemoData(object parameter)
+        private async void GenerateDemoData(object? parameter)
         {
             try
             {
                 IsLoading = true;
                 StatusMessage = "Generating demo data...";
+                
+                if (!_dataService.VerifyRequiredDataFiles())
+                {
+                    if (!_dataService.CreateSampleDataFiles())
+                    {
+                        throw new Exception("Failed to create sample data files");
+                    }
+                }
                 
                 await Task.Run(() =>
                 {
