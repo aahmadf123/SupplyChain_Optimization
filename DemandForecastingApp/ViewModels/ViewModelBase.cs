@@ -9,7 +9,7 @@ namespace DemandForecastingApp.ViewModels
     /// Base class for all view models in the application
     /// Implements INotifyPropertyChanged for UI data binding
     /// </summary>
-    public class ViewModelBase : INotifyPropertyChanged
+    public abstract class ViewModelBase : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -34,7 +34,6 @@ namespace DemandForecastingApp.ViewModels
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
             if (Equals(field, value)) return false;
-
             field = value;
             OnPropertyChanged(propertyName);
             return true;

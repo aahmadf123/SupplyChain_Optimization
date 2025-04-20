@@ -85,6 +85,8 @@ namespace DemandForecastingApp.ML
         private readonly ModelErrorHandler _errorHandler;
         private readonly ModelMonitor _modelMonitor;
 
+        public string ModelName => _forecaster.ModelName;
+
         public MonitoredForecaster(IForecaster forecaster, ModelErrorHandler errorHandler, ModelMonitor modelMonitor)
         {
             _forecaster = forecaster;
@@ -104,12 +106,14 @@ namespace DemandForecastingApp.ML
             }
         }
 
-        public List<float> Predict(List<RossmannSalesRecord> data, int horizon)
+        public List<(DateTime Date, float Forecast, float LowerBound, float UpperBound)> Predict(
+            List<RossmannSalesRecord> data, 
+            int horizon = 10)
         {
             try
             {
                 var predictions = _forecaster.Predict(data, horizon);
-                _modelMonitor.TrackPrediction(predictions[0], data[^1].Sales);
+                _modelMonitor.TrackPrediction(predictions[0].Forecast, data[^1].Sales);
                 return predictions;
             }
             catch (Exception ex)
@@ -117,10 +121,23 @@ namespace DemandForecastingApp.ML
                 if (_errorHandler.HandlePredictionError(ex, _forecaster, data))
                 {
                     var predictions = _forecaster.Predict(data, horizon);
-                    _modelMonitor.TrackPrediction(predictions[0], data[^1].Sales);
+                    _modelMonitor.TrackPrediction(predictions[0].Forecast, data[^1].Sales);
                     return predictions;
                 }
                 throw;
+            }
+        }
+
+        public float Evaluate(List<RossmannSalesRecord> testData)
+        {
+            try
+            {
+                return _forecaster.Evaluate(testData);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error evaluating model {ModelName}", ex);
+                return float.MaxValue; // Return worst possible score on error
             }
         }
 

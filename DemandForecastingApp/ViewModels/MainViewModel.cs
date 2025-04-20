@@ -24,43 +24,48 @@ namespace DemandForecastingApp.ViewModels
         public ObservableCollection<DemandRecord> DemandData
         {
             get => _demandData;
-            set
-            {
-                _demandData = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _demandData, value);
         }
         
-        private ObservableCollection<ForecastPeriod> _forecastData;
-        public ObservableCollection<ForecastPeriod> ForecastData
+        private ObservableCollection<ForecastResult> _forecastData;
+        public ObservableCollection<ForecastResult> ForecastData
         {
             get => _forecastData;
+            set => SetProperty(ref _forecastData, value);
+        }
+        
+        private string _selectedForecaster = "Standard";
+        public string SelectedForecaster
+        {
+            get => _selectedForecaster;
+            set => SetProperty(ref _selectedForecaster, value);
+        }
+        
+        private float _leadTime = 7;
+        public float LeadTime
+        {
+            get => _leadTime;
             set
             {
-                _forecastData = value;
-                OnPropertyChanged();
+                if (value <= 0)
+                {
+                    throw new ArgumentException("Lead time must be greater than 0");
+                }
+                SetProperty(ref _leadTime, value);
             }
         }
         
-        private string _selectedModelType = "Standard (Best for most situations)";
-        public string SelectedModelType
+        private float _reorderPoint = 100;
+        public float ReorderPoint
         {
-            get => _selectedModelType;
+            get => _reorderPoint;
             set
             {
-                _selectedModelType = value;
-                OnPropertyChanged();
-            }
-        }
-        
-        private int _daysToForecast = 30;
-        public int DaysToForecast
-        {
-            get => _daysToForecast;
-            set
-            {
-                _daysToForecast = value;
-                OnPropertyChanged();
+                if (value < 0)
+                {
+                    throw new ArgumentException("Reorder point cannot be negative");
+                }
+                SetProperty(ref _reorderPoint, value);
             }
         }
         
@@ -68,11 +73,7 @@ namespace DemandForecastingApp.ViewModels
         public string StatusMessage
         {
             get => _statusMessage;
-            set
-            {
-                _statusMessage = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _statusMessage, value);
         }
         
         private bool _isLoading;
@@ -81,12 +82,13 @@ namespace DemandForecastingApp.ViewModels
             get => _isLoading;
             set
             {
-                _isLoading = value;
-                OnPropertyChanged();
-                // Make sure to update command availability when loading state changes
-                (LoadDataCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (RunForecastCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                (ExportResultsCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                if (SetProperty(ref _isLoading, value))
+                {
+                    // Make sure to update command availability when loading state changes
+                    (LoadDataCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (RunForecastCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (ExportResultsCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                }
             }
         }
         
@@ -94,26 +96,18 @@ namespace DemandForecastingApp.ViewModels
         public DateTime StartDate
         {
             get => _startDate;
-            set
-            {
-                _startDate = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _startDate, value);
         }
         
         private DateTime _endDate = DateTime.Now;
         public DateTime EndDate
         {
             get => _endDate;
-            set
-            {
-                _endDate = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _endDate, value);
         }
         
         // Available model types
-        public List<string> AvailableModelTypes { get; } = new List<string> 
+        public ObservableCollection<string> AvailableModelTypes { get; } = new ObservableCollection<string> 
         { 
             "Standard (Best for most situations)",
             "Advanced (For complex patterns)",
@@ -128,86 +122,47 @@ namespace DemandForecastingApp.ViewModels
         public ICommand GenerateDemoDataCommand { get; }
         
         // Services and data
-        private readonly DataImporter _dataImporter;
-        private readonly Dictionary<string, IForecaster> _forecasters;
+        private readonly DataService _dataService;
+        private readonly ForecastModel _forecastModel;
         private List<RossmannSalesRecord> _salesData;
         
         public MainViewModel()
         {
-            // Initialize collections
+            _dataService = new DataService();
+            _forecastModel = new ForecastModel();
             _demandData = new ObservableCollection<DemandRecord>();
-            _forecastData = new ObservableCollection<ForecastPeriod>();
+            _forecastData = new ObservableCollection<ForecastResult>();
+            _selectedForecaster = "Standard";
+            _leadTime = 7;
+            _reorderPoint = 100;
+            _statusMessage = "Ready";
             
-            // Initialize services
-            _dataImporter = new DataImporter();
-            _forecasters = new Dictionary<string, IForecaster>
-            {
-                { "Standard", new SSAForecaster() },
-                { "Advanced", new LSTMForecaster() }
-            };
-            
-            // Initialize commands
-            LoadDataCommand = new RelayCommand(LoadData, CanLoadData);
-            RunForecastCommand = new RelayCommand(RunForecast, CanRunForecast);
-            ExportResultsCommand = new RelayCommand(ExportResults, CanExportResults);
-            GenerateDemoDataCommand = new RelayCommand(GenerateDemoData);
+            // Initialize commands with proper CanExecute conditions
+            LoadDataCommand = new RelayCommand(ExecuteLoadData, _ => !IsLoading);
+            RunForecastCommand = new RelayCommand(ExecuteRunForecast, _ => !IsLoading && DemandData?.Count > 0);
+            ExportResultsCommand = new RelayCommand(ExecuteExportResults, _ => !IsLoading && ForecastData?.Count > 0);
+            GenerateDemoDataCommand = new RelayCommand(GenerateDemoData, _ => !IsLoading);
         }
         
-        private void LoadData(object parameter)
+        private async void ExecuteLoadData(object parameter)
         {
             try
             {
-                StatusMessage = "Loading data...";
                 IsLoading = true;
+                StatusMessage = "Loading data...";
                 
-                // Show file dialog to select data file
-                var dialog = new OpenFileDialog
+                var data = await Task.Run(() => _dataService.LoadDemandData());
+                DemandData.Clear();
+                foreach (var record in data)
                 {
-                    Title = "Select Sales Data File",
-                    Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                };
-                
-                if (dialog.ShowDialog() == true)
-                {
-                    string filePath = dialog.FileName;
-                    
-                    if (Path.GetExtension(filePath).Equals(".csv", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Use the regular DataImporter for CSV files
-                        _demandData = new ObservableCollection<DemandRecord>(_dataImporter.ImportCsvData(filePath));
-                        StatusMessage = $"Successfully loaded {_demandData.Count} records from {Path.GetFileName(filePath)}";
-                    }
-                    else if (IsRossmannDataFile(filePath))
-                    {
-                        // Use the RossmannDataImporter for specific Rossmann files
-                        string dataFolder = Path.GetDirectoryName(filePath);
-                        var rossmannImporter = new RossmannDataImporter();
-                        _salesData = rossmannImporter.ImportData(dataFolder);
-                        
-                        // Convert Rossmann records to DemandRecords
-                        _demandData = new ObservableCollection<DemandRecord>(
-                            _salesData.Select(r => new DemandRecord
-                            {
-                                Date = r.Date,
-                                Sales = r.Sales,
-                                Store = r.Store.ToString()
-                            }));
-                        
-                        StatusMessage = $"Successfully loaded {_demandData.Count} records from Rossmann dataset";
-                    }
-                    else
-                    {
-                        MessageBox.Show("Unsupported file format", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        StatusMessage = "Error: Unsupported file format";
-                    }
+                    DemandData.Add(record);
                 }
+                StatusMessage = $"Loaded {DemandData.Count} records";
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error loading data", ex);
-                MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                StatusMessage = "Error loading data";
+                StatusMessage = $"Error loading data: {ex.Message}";
             }
             finally
             {
@@ -215,55 +170,25 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
-        private bool CanLoadData(object parameter)
-        {
-            return !IsLoading;
-        }
-        
-        private async void RunForecast(object parameter)
+        private async void ExecuteRunForecast(object parameter)
         {
             try
             {
-                if (_salesData == null || _salesData.Count == 0)
-                {
-                    MessageBox.Show("Please load data first", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                StatusMessage = "Running forecast...";
                 IsLoading = true;
-
-                // Get the appropriate forecaster based on user selection
-                string modelType = GetActualModelType(SelectedModelType);
-                if (!_forecasters.TryGetValue(modelType, out var forecaster))
+                StatusMessage = "Running forecast...";
+                
+                var forecast = await Task.Run(() => _forecastModel.PredictDemand(DemandData));
+                ForecastData.Clear();
+                foreach (var result in forecast)
                 {
-                    MessageBox.Show("Invalid model type selected", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    ForecastData.Add(result);
                 }
-
-                // Train the model
-                await Task.Run(() => forecaster.Train(_salesData));
-
-                // Generate forecast
-                var predictions = forecaster.Predict(_salesData, DaysToForecast);
-
-                // Convert predictions to ForecastPeriods
-                _forecastData = new ObservableCollection<ForecastPeriod>(
-                    predictions.Select(p => new ForecastPeriod
-                    {
-                        Date = p.Date,
-                        Forecast = p.Forecast,
-                        LowerBound = p.LowerBound,
-                        UpperBound = p.UpperBound
-                    }));
-
                 StatusMessage = "Forecast completed successfully";
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error running forecast", ex);
-                MessageBox.Show($"Error running forecast: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                StatusMessage = "Error running forecast";
+                StatusMessage = $"Error running forecast: {ex.Message}";
             }
             finally
             {
@@ -271,88 +196,68 @@ namespace DemandForecastingApp.ViewModels
             }
         }
         
-        private bool CanRunForecast(object parameter)
-        {
-            return !IsLoading && _salesData != null && _salesData.Count > 0;
-        }
-        
-        private void ExportResults(object parameter)
+        private async void ExecuteExportResults(object parameter)
         {
             try
             {
-                if (_forecastData == null || _forecastData.Count == 0)
-                {
-                    MessageBox.Show("No forecast data to export", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                var dialog = new SaveFileDialog
-                {
-                    Title = "Export Forecast Results",
-                    Filter = "CSV Files (*.csv)|*.csv",
-                    DefaultExt = ".csv",
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    using (var writer = new StreamWriter(dialog.FileName))
-                    {
-                        // Write header
-                        writer.WriteLine("Date,Forecast,LowerBound,UpperBound");
-
-                        // Write data
-                        foreach (var period in _forecastData)
-                        {
-                            writer.WriteLine($"{period.Date:yyyy-MM-dd},{period.Forecast},{period.LowerBound},{period.UpperBound}");
-                        }
-                    }
-
-                    StatusMessage = $"Results exported to {Path.GetFileName(dialog.FileName)}";
-                }
+                IsLoading = true;
+                StatusMessage = "Exporting results...";
+                
+                await Task.Run(() => _dataService.ExportForecastResults(ForecastData));
+                StatusMessage = "Results exported successfully";
             }
             catch (Exception ex)
             {
                 Logger.LogError("Error exporting results", ex);
-                MessageBox.Show($"Error exporting results: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                StatusMessage = "Error exporting results";
+                StatusMessage = $"Error exporting results: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
         
-        private bool CanExportResults(object parameter)
-        {
-            return !IsLoading && _forecastData != null && _forecastData.Count > 0;
-        }
-        
-        private void GenerateDemoData(object parameter)
+        private async void GenerateDemoData(object parameter)
         {
             try
             {
-                var demoData = new List<RossmannSalesRecord>();
-                var startDate = DateTime.Now.AddYears(-1);
-
-                // Generate one year of demo data
-                for (int i = 0; i < 365; i++)
+                IsLoading = true;
+                StatusMessage = "Generating demo data...";
+                
+                await Task.Run(() =>
                 {
-                    var date = startDate.AddDays(i);
-                    var sales = 1000 + Math.Sin(i * 0.1) * 200 + (date.DayOfWeek == DayOfWeek.Saturday ? 300 : 0);
-                    
-                    demoData.Add(new RossmannSalesRecord
-                    {
-                        Date = date,
-                        Store = 1,
-                        Sales = (float)sales
-                    });
-                }
+                    var demoData = new List<RossmannSalesRecord>();
+                    var startDate = DateTime.Now.AddYears(-1);
 
-                _salesData = demoData;
-                _demandData = new ObservableCollection<DemandRecord>(
-                    demoData.Select(r => new DemandRecord
+                    // Generate one year of demo data
+                    for (int i = 0; i < 365; i++)
                     {
-                        Date = r.Date,
-                        Sales = r.Sales,
-                        Store = r.Store.ToString()
-                    }));
+                        var date = startDate.AddDays(i);
+                        var sales = 1000 + Math.Sin(i * 0.1) * 200 + (date.DayOfWeek == DayOfWeek.Saturday ? 300 : 0);
+                        
+                        demoData.Add(new RossmannSalesRecord
+                        {
+                            Date = date,
+                            Store = 1,
+                            Sales = (float)sales
+                        });
+                    }
+
+                    _salesData = demoData;
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        DemandData.Clear();
+                        foreach (var record in demoData.Select(r => new DemandRecord
+                        {
+                            Date = r.Date,
+                            Sales = r.Sales,
+                            Store = r.Store.ToString()
+                        }))
+                        {
+                            DemandData.Add(record);
+                        }
+                    });
+                });
 
                 StatusMessage = "Demo data generated successfully";
             }
@@ -361,6 +266,10 @@ namespace DemandForecastingApp.ViewModels
                 Logger.LogError("Error generating demo data", ex);
                 MessageBox.Show($"Error generating demo data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusMessage = "Error generating demo data";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
         
